@@ -16,18 +16,22 @@ class GoogleMapPlotter(object):
         self.points = []
         self.radpoints = []
         self.gridsetting = None
-        self.coloricon = os.path.abspath("./markers_grad/%s.png")
-        #self.coloricon = 'http://chart.apis.google.com/chart?cht=mm&chs=12x16&chco=FFFFFF,XXXXXX,000000&ext=.png'
+        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
+        lat, lng = cls.geocode(location_string)
+        return cls(lat, lng, zoom)
+
+    @classmethod
+    def geocode(self, location_string):
         geocode = requests.get(
             'http://maps.googleapis.com/maps/api/geocode/json?address="%s"' % location_string)
         geocode = json.loads(geocode.text)
         latlng_dict = geocode['results'][0]['geometry']['location']
-        return cls(latlng_dict['lat'], latlng_dict['lng'], zoom)
+        return latlng_dict['lat'], latlng_dict['lng']
 
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
@@ -248,6 +252,8 @@ if __name__ == "__main__":
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
     mymap.marker(37.427, -122.145, "yellow")
+    lat, lng = mymap.geocode("Stanford University")
+    mymap.marker(lat, lng, "red")
     mymap.circle(37.429, -122.145, 95, "#FF0000")
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
