@@ -14,6 +14,7 @@ class GoogleMapPlotter(object):
         self.grids = None
         self.paths = []
         self.points = []
+        self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
@@ -69,6 +70,11 @@ class GoogleMapPlotter(object):
         path.append(color)
         self.paths.append(path)
 
+    def heatmap(self, lats, lngs):
+        # TODO: ADD RADIUS AND COLORS
+        for lat, lng in zip(lats, lngs):
+          self.heatmap_points.append((lat, lng))
+
     # create the html file which inlcude one google map and all points and
     # paths
     def draw(self, htmlfile):
@@ -80,8 +86,7 @@ class GoogleMapPlotter(object):
         f.write(
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
         f.write('<title>Google Maps - pygmaps </title>\n')
-        f.write(
-            '<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>\n')
+        f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n')
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
         self.drawmap(f)
@@ -89,6 +94,7 @@ class GoogleMapPlotter(object):
         self.drawpoints(f)
         self.drawradpoints(f)
         self.drawpaths(f, self.paths)
+        self.drawHeatmap(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -245,6 +251,21 @@ class GoogleMapPlotter(object):
         f.write('polygon.setMap(map);\n')
         f.write('\n\n')
 
+    def drawHeatmap(self, f):
+        f.write('var heatmap_points = [\n')
+        for heatmap_lat, heatmap_lng in self.heatmap_points:
+            f.write('new google.maps.LatLng(%f, %f),\n' %
+                    (heatmap_lat, heatmap_lng))
+        f.write('];\n')
+        f.write('\n')
+        f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
+        f.write('var heatmap;' + '\n')
+        f.write('heatmap = new google.maps.visualization.HeatmapLayer({' + '\n')
+        f.write('\n')
+        f.write('data: pointArray' + '\n')
+        f.write('});' + '\n')
+        f.write('heatmap.setMap(map);' + '\n')
+
 if __name__ == "__main__":
 
     mymap = GoogleMapPlotter(37.428, -122.145, 16)
@@ -258,4 +279,5 @@ if __name__ == "__main__":
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
     mymap.plot(path[0], path[1], "cyan")
+    mymap.heatmap(path[0], path[1])
     mymap.draw('./mymap.html')
