@@ -75,7 +75,7 @@ class GoogleMapPlotter(object):
         for lat, lng in zip(lats, lngs):
           self.heatmap_points.append((lat, lng))
 
-    # create the html file which inlcude one google map and all points and
+    # create the html file which include one google map and all points and
     # paths
     def draw(self, htmlfile):
         f = open(htmlfile, 'w')
@@ -89,12 +89,12 @@ class GoogleMapPlotter(object):
         f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n')
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
-        self.drawmap(f)
-        self.drawgrids(f)
-        self.drawpoints(f)
-        self.drawradpoints(f)
-        self.drawpaths(f, self.paths)
-        self.drawHeatmap(f)
+        self.write_map(f)
+        self.write_grids(f)
+        self.write_points(f)
+        self.write_radpoints(f)
+        self.write_paths(f)
+        self.write_Heatmap(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -106,7 +106,11 @@ class GoogleMapPlotter(object):
         f.write('</html>\n')
         f.close()
 
-    def drawgrids(self, f):
+    #############################################
+    # # # # # # Low level Map Drawing # # # # # #
+    #############################################
+
+    def write_grids(self, f):
         if self.gridsetting is None:
             return
         slat = self.gridsetting[0]
@@ -130,18 +134,18 @@ class GoogleMapPlotter(object):
                 [(slat + latin / 2.0, lng + lngin / 2.0), (elat + latin / 2.0, lng + lngin / 2.0)])
 
         for line in self.grids:
-            self.drawPolyline(f, line, strokeColor="#000000")
+            self.write_polyline(f, line, strokeColor="#000000")
 
-    def drawpoints(self, f):
+    def write_points(self, f):
         for point in self.points:
-            self.drawpoint(f, point[0], point[1], point[2])
+            self.write_point(f, point[0], point[1], point[2])
 
-    def drawradpoints(self, f):
+    def write_radpoints(self, f):
         for rpoint in self.radpoints:
-            path = self.getcycle(rpoint[0:3])
-            self.drawPolygon(f, path, strokeColor=rpoint[3])
+            path = self.get_cycle(rpoint[0:3])
+            self.write_polygon(f, path, strokeColor=rpoint[3])
 
-    def getcycle(self, rpoint):
+    def get_cycle(self, rpoint):
         cycle = []
         lat = rpoint[0]
         lng = rpoint[1]
@@ -162,15 +166,12 @@ class GoogleMapPlotter(object):
                 (float(y * (180.0 / math.pi)), float(x * (180.0 / math.pi))))
         return cycle
 
-    #############################################
-    # # # # # # Low level Map Drawing # # # # # #
-    #############################################
 
-    def drawpaths(self, f, paths):
-        for path in paths:
-            self.drawPolyline(f, path[:-1],  strokeColor=path[-1])
+    def write_paths(self, f):
+        for path in self.paths:
+            self.write_polyline(f, path[:-1],  strokeColor=path[-1])
 
-    def drawmap(self,  f):
+    def write_map(self,  f):
         f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
                 (self.center[0], self.center[1]))
         f.write('\t\tvar myOptions = {\n')
@@ -182,7 +183,7 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def drawpoint(self, f, lat, lon, color):
+    def write_point(self, f, lat, lon, color):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
@@ -195,7 +196,7 @@ class GoogleMapPlotter(object):
         f.write('\t\tmarker.setMap(map);\n')
         f.write('\n')
 
-    def drawPolyline(self, f, path,
+    def write_polyline(self, f, path,
                      clickable=False,
                      geodesic=True,
                      strokeColor="#FF0000",
@@ -221,7 +222,7 @@ class GoogleMapPlotter(object):
         f.write('Path.setMap(map);\n')
         f.write('\n\n')
 
-    def drawPolygon(self, f, path,
+    def write_polygon(self, f, path,
                     clickable=False,
                     geodesic=True,
                     fillColor="#000000",
@@ -251,7 +252,7 @@ class GoogleMapPlotter(object):
         f.write('polygon.setMap(map);\n')
         f.write('\n\n')
 
-    def drawHeatmap(self, f):
+    def write_Heatmap(self, f):
         f.write('var heatmap_points = [\n')
         for heatmap_lat, heatmap_lng in self.heatmap_points:
             f.write('new google.maps.LatLng(%f, %f),\n' %
