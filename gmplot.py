@@ -54,12 +54,12 @@ class GoogleMapPlotter(object):
         for lat, lng in zip(lats, lngs):
             self.points.append((lat, lng, color[1:]))
 
-    def circle(self,  lat, lng, rad, color='#0000FF', c=None):
+    def circle(self,  lat, lng, radius, color='#0000FF', c=None):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.radpoints.append((lat, lng, rad, color))
+        self.radpoints.append((lat, lng, radius, color))
 
     def plot(self, lats, lngs, color='#FF0000', c=None):
         path = zip(lats, lngs)
@@ -94,7 +94,7 @@ class GoogleMapPlotter(object):
         self.write_points(f)
         self.write_radpoints(f)
         self.write_paths(f)
-        self.write_Heatmap(f)
+        self.write_heatmap(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -252,7 +252,7 @@ class GoogleMapPlotter(object):
         f.write('polygon.setMap(map);\n')
         f.write('\n\n')
 
-    def write_Heatmap(self, f):
+    def write_heatmap(self, f):
         f.write('var heatmap_points = [\n')
         for heatmap_lat, heatmap_lng in self.heatmap_points:
             f.write('new google.maps.LatLng(%f, %f),\n' %
