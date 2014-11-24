@@ -13,6 +13,7 @@ class GoogleMapPlotter(object):
         self.zoom = int(zoom)
         self.grids = None
         self.paths = []
+        self.shapes = []
         self.points = []
         self.heatmap_points = []
         self.radpoints = []
@@ -61,19 +62,76 @@ class GoogleMapPlotter(object):
         color = self.html_color_codes.get(color, color)
         self.radpoints.append((lat, lng, radius, color))
 
-    def plot(self, lats, lngs, color='#FF0000', c=None):
+    def _process_kwargs(self, kwargs):
+        settings = dict()
+        settings["edge_color"] = kwargs.get("color", None) or \
+                                 kwargs.get("edge_color", None) or \
+                                 kwargs.get("ec", None) or \
+                                 "#000000"
+
+        settings["edge_alpha"] = kwargs.get("alpha", None) or \
+                                 kwargs.get("edge_alpha", None) or \
+                                 kwargs.get("ea", None) or \
+                                 1.0
+        settings["edge_width"] = kwargs.get("edge_width", None) or \
+                                 kwargs.get("ew", None) or \
+                                 1.0
+        settings["face_alpha"] = kwargs.get("alpha", None) or \
+                                 kwargs.get("face_alpha", None) or \
+                                 kwargs.get("fa", None) or \
+                                 0.3
+        settings["face_color"] = kwargs.get("color", None) or \
+                                 kwargs.get("face_color", None) or \
+                                 kwargs.get("fc", None) or \
+                                 "#000000"
+
+        settings["color"] = kwargs.get("color", None) or \
+                            kwargs.get("c", None) or \
+                            settings["edge_color"] or \
+                            settings["face_color"]
+
+        # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
+        for key, color in settings.iteritems():
+            if 'color' in key:
+                color = self.color_dict.get(color, color)
+                color = self.html_color_codes.get(color, color)
+                settings[key] = color
+
+        settings["closed"] = kwargs.get("closed", None)
+
+        return settings
+
+    def plot(self, lats, lngs, color=None, c=None, **kwargs):
+        color = color or c
+        kwargs.setdefault("color", color)
+        settings = self._process_kwargs(kwargs)
         path = zip(lats, lngs)
-        if c:
-            color = c
-        color = self.color_dict.get(color, color)
-        color = self.html_color_codes.get(color, color)
-        path.append(color)
-        self.paths.append(path)
+        self.paths.append((path, settings))
 
     def heatmap(self, lats, lngs):
         # TODO: ADD RADIUS AND COLORS
         for lat, lng in zip(lats, lngs):
           self.heatmap_points.append((lat, lng))
+
+    def polygon(self, lats, lngs, color=None, c=None, **kwargs):
+        color = color or c
+        kwargs.setdefault("color", color)
+        settings = self._process_kwargs(kwargs)
+        shape = zip(lats, lngs)
+        self.shapes.append((shape, settings))
+
+    # def polygon(self, lats, lngs, color='#FF0000', c=None, *args, **kwargs):
+    #     for lat, lng in zip(lats, lngs):
+    #         self.polygons.append((lat, lng))
+    # def write_polygon(self, f, path,
+    #                   clickable=False,
+    #                   geodesic=True,
+    #                   fillColor="#000000",
+    #                   fillOpacity=0.0,
+    #                   strokeColor="#FF0000",
+    #                   strokeOpacity=1.0,
+    #                   strokeWeight=1
+    # ):
 
     # create the html file which include one google map and all points and
     # paths
@@ -94,6 +152,7 @@ class GoogleMapPlotter(object):
         self.write_points(f)
         self.write_radpoints(f)
         self.write_paths(f)
+        self.write_shapes(f)
         self.write_heatmap(f)
         f.write('\t}\n')
         f.write('</script>\n')
@@ -134,7 +193,8 @@ class GoogleMapPlotter(object):
                 [(slat + latin / 2.0, lng + lngin / 2.0), (elat + latin / 2.0, lng + lngin / 2.0)])
 
         for line in self.grids:
-            self.write_polyline(f, line, strokeColor="#000000")
+            settings = self._process_kwargs({"color": "#000000"})
+            self.write_polyline(f, line, settings)
 
     def write_points(self, f):
         for point in self.points:
@@ -143,7 +203,10 @@ class GoogleMapPlotter(object):
     def write_radpoints(self, f):
         for rpoint in self.radpoints:
             path = self.get_cycle(rpoint[0:3])
-            self.write_polygon(f, path, strokeColor=rpoint[3])
+            #default_settings = dict(strokeColor=rpoint[3], fillColor="#FA03A3", fillOpacity=0.5)
+            default_settings = dict(edge_color=rpoint[3], face_color="#FA03A3", fill_alpha=0.5)
+            default_settings = self._process_kwargs(default_settings)
+            self.write_polygon(f, path, default_settings)
 
     def get_cycle(self, rpoint):
         cycle = []
@@ -168,8 +231,12 @@ class GoogleMapPlotter(object):
 
 
     def write_paths(self, f):
-        for path in self.paths:
-            self.write_polyline(f, path[:-1],  strokeColor=path[-1])
+        for path, settings in self.paths:
+            self.write_polyline(f, path, settings)
+
+    def write_shapes(self, f):
+        for shape, settings in self.shapes:
+            self.write_polygon(f, shape, settings)
 
     def write_map(self,  f):
         f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
@@ -196,13 +263,13 @@ class GoogleMapPlotter(object):
         f.write('\t\tmarker.setMap(map);\n')
         f.write('\n')
 
-    def write_polyline(self, f, path,
-                     clickable=False,
-                     geodesic=True,
-                     strokeColor="#FF0000",
-                     strokeOpacity=1.0,
-                     strokeWeight=2
-                     ):
+    def write_polyline(self, f, path, settings):
+        clickable = False
+        geodesic = True
+        strokeColor = settings.get('color') or settings.get('edge_color')
+        strokeOpacity = settings.get('edge_alpha')
+        strokeWeight = settings.get('edge_width')
+
         f.write('var PolylineCoordinates = [\n')
         for coordinate in path:
             f.write('new google.maps.LatLng(%f, %f),\n' %
@@ -222,15 +289,14 @@ class GoogleMapPlotter(object):
         f.write('Path.setMap(map);\n')
         f.write('\n\n')
 
-    def write_polygon(self, f, path,
-                    clickable=False,
-                    geodesic=True,
-                    fillColor="#000000",
-                    fillOpacity=0.0,
-                    strokeColor="#FF0000",
-                    strokeOpacity=1.0,
-                    strokeWeight=1
-                    ):
+    def write_polygon(self, f, path, settings):
+        clickable = False
+        geodesic = True
+        strokeColor = settings.get('edge_color') or settings.get('color')
+        strokeOpacity = settings.get('edge_alpha')
+        strokeWeight = settings.get('edge_width')
+        fillColor = settings.get('face_color') or settings.get('color')
+        fillOpacity= settings.get('face_alpha')
         f.write('var coords = [\n')
         for coordinate in path:
             f.write('new google.maps.LatLng(%f, %f),\n' %
@@ -279,6 +345,10 @@ if __name__ == "__main__":
     mymap.circle(37.429, -122.145, 95, "#FF0000")
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
-    mymap.plot(path[0], path[1], "cyan")
+    path2 = [[i+.01 for i in path[0]], [i+.02 for i in path[1]]]
+    path3 = [(37.433302 , 37.431257 , 37.427644 , 37.430303), (-122.14488, -122.133121, -122.137799, -122.148743)]
+    mymap.plot(path[0], path[1], "plum", edge_width=10)
+    mymap.plot(path2[0], path2[1], "red")
+    mymap.polygon(path3[0], path3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
     mymap.heatmap(path[0], path[1])
     mymap.draw('./mymap.html')
