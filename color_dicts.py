@@ -9,6 +9,8 @@ mpl_color_map = {
     'w': 'white'
 }
 
+# TODO: Copy matplotlib.colors.cnames
+# That list has 147 colors. The below is only 120. =(
 html_color_codes = {
     'aliceblue': '#F0F8FF',
     'antiquewhite': '#FAEBD7',

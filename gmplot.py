@@ -108,6 +108,9 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
+    # TODO: Add settings dictionary.
+    # TODO: Add intensity setting. A setting of 10 was good for data
+    # overloaded by a home address. (It's a threshold.)
     def heatmap(self, lats, lngs):
         # TODO: ADD RADIUS AND COLORS
         for lat, lng in zip(lats, lngs):
