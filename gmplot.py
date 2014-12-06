@@ -108,13 +108,47 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    # TODO: Add settings dictionary.
-    # TODO: Add intensity setting. A setting of 10 was good for data
-    # overloaded by a home address. (It's a threshold.)
-    def heatmap(self, lats, lngs):
-        # TODO: ADD RADIUS AND COLORS
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, dissipating=True):
+        """
+        :param lats: list of latitudes
+        :param lngs: list of longitudes
+        :param threshold:
+        :param radius: The hardest param. Example (string):
+        :return:
+        """
+        settings = {}
+        settings['threshold'] = threshold
+        settings['radius'] = radius
+        settings['gradient'] = gradient
+        settings['opacity'] = opacity
+        settings['dissipating'] = dissipating
+        settings = self._process_heatmap_kwargs(settings)
+
+        heatmap_points = []
         for lat, lng in zip(lats, lngs):
-          self.heatmap_points.append((lat, lng))
+            heatmap_points.append((lat, lng))
+        self.heatmap_points.append((heatmap_points, settings))
+
+    def _process_heatmap_kwargs(self, settings_dict):
+        settings_string = ''
+        settings_string += "heatmap.set('threshold', %d);\n" % settings_dict['threshold']
+        settings_string += "heatmap.set('radius', %d);\n" % settings_dict['radius']
+        settings_string += "heatmap.set('opacity', %f);\n" % settings_dict['opacity']
+
+        dissipation_string = 'true' if settings_dict['dissipating'] else 'false'
+        settings_string += "heatmap.set('dissipating', %s);\n" % (dissipation_string)
+
+        gradient = settings_dict['gradient']
+        if gradient:
+            gradient_string = "var gradient = ["
+            for r, g, b, a in gradient:
+                gradient_string += "\t" + "'rgba(%d, %d, %d, %d)',\n" % (r, g, b, a)
+            gradient_string += '];' + '\n'
+            gradient_string += "heatmap.set('gradient', gradient);\n"
+
+            settings_string += gradient_string
+
+        return settings_string
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         color = color or c
@@ -232,7 +266,6 @@ class GoogleMapPlotter(object):
                 (float(y * (180.0 / math.pi)), float(x * (180.0 / math.pi))))
         return cycle
 
-
     def write_paths(self, f):
         for path, settings in self.paths:
             self.write_polyline(f, path, settings)
@@ -241,6 +274,7 @@ class GoogleMapPlotter(object):
         for shape, settings in self.shapes:
             self.write_polygon(f, shape, settings)
 
+    # TODO: Add support for mapTypeId: google.maps.MapTypeId.SATELLITE
     def write_map(self,  f):
         f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
                 (self.center[0], self.center[1]))
@@ -322,19 +356,21 @@ class GoogleMapPlotter(object):
         f.write('\n\n')
 
     def write_heatmap(self, f):
-        f.write('var heatmap_points = [\n')
-        for heatmap_lat, heatmap_lng in self.heatmap_points:
-            f.write('new google.maps.LatLng(%f, %f),\n' %
-                    (heatmap_lat, heatmap_lng))
-        f.write('];\n')
-        f.write('\n')
-        f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
-        f.write('var heatmap;' + '\n')
-        f.write('heatmap = new google.maps.visualization.HeatmapLayer({' + '\n')
-        f.write('\n')
-        f.write('data: pointArray' + '\n')
-        f.write('});' + '\n')
-        f.write('heatmap.setMap(map);' + '\n')
+        for heatmap_points, settings_string in self.heatmap_points:
+            f.write('var heatmap_points = [\n')
+            for heatmap_lat, heatmap_lng in heatmap_points:
+                f.write('new google.maps.LatLng(%f, %f),\n' %
+                        (heatmap_lat, heatmap_lng))
+            f.write('];\n')
+            f.write('\n')
+            f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
+            f.write('var heatmap;' + '\n')
+            f.write('heatmap = new google.maps.visualization.HeatmapLayer({' + '\n')
+            f.write('\n')
+            f.write('data: pointArray' + '\n')
+            f.write('});' + '\n')
+            f.write('heatmap.setMap(map);' + '\n')
+            f.write(settings_string)
 
 if __name__ == "__main__":
 
@@ -350,8 +386,12 @@ if __name__ == "__main__":
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
     path2 = [[i+.01 for i in path[0]], [i+.02 for i in path[1]]]
     path3 = [(37.433302 , 37.431257 , 37.427644 , 37.430303), (-122.14488, -122.133121, -122.137799, -122.148743)]
+    path4 = [(37.423074, 37.422700, 37.422410, 37.422188, 37.422274, 37.422495, 37.422962, 37.423552, 37.424387, 37.425920, 37.425937),
+         (-122.150288, -122.149794, -122.148936, -122.148142, -122.146747, -122.14561, -122.144773, -122.143936, -122.142992, -122.147863, -122.145953)]
     mymap.plot(path[0], path[1], "plum", edge_width=10)
     mymap.plot(path2[0], path2[1], "red")
     mymap.polygon(path3[0], path3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
-    mymap.heatmap(path[0], path[1])
+    mymap.heatmap(path4[0], path4[1], threshold=10, radius=40)
+    mymap.heatmap(path3[0], path3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
     mymap.draw('./mymap.html')
+
