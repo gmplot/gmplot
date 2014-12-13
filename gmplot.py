@@ -45,22 +45,26 @@ class GoogleMapPlotter(object):
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:]))
 
-    def scatter(self, lats, lngs, color='#FF0000', c=None):
-        if c:
-            color = c
-        color = self.color_dict.get(color, color)
-        color = self.html_color_codes.get(color, color)
-        if type(color) == str:
-            color = [color] * len(lats)
+    def scatter(self, lats, lngs, marker=True, color=None, c=None, size=None, s=None, **kwargs):
+        color = color or c
+        size = size or s or 40
+        kwargs["color"] = color
+        kwargs["size"] = size
+        settings = self._process_kwargs(kwargs)
         for lat, lng in zip(lats, lngs):
-            self.points.append((lat, lng, color[1:]))
+            if marker:
+                self.marker(lat, lng, settings['color'])
+            else:
+                self.circle(lat, lng, size, **settings)
 
-    def circle(self,  lat, lng, radius, color='#0000FF', c=None):
-        if c:
-            color = c
-        color = self.color_dict.get(color, color)
-        color = self.html_color_codes.get(color, color)
-        self.radpoints.append((lat, lng, radius, color))
+    def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
+        color = color or c
+        kwargs.setdefault('face_alpha', 0.5)
+        kwargs.setdefault('face_color', "#000000")
+        kwargs.setdefault("color", color)
+        settings = self._process_kwargs(kwargs)
+        path = self.get_cycle(lat, lng, radius)
+        self.shapes.append((path, settings))
 
     def _process_kwargs(self, kwargs):
         settings = dict()
@@ -140,7 +144,7 @@ class GoogleMapPlotter(object):
 
         gradient = settings_dict['gradient']
         if gradient:
-            gradient_string = "var gradient = ["
+            gradient_string = "var gradient = [\n"
             for r, g, b, a in gradient:
                 gradient_string += "\t" + "'rgba(%d, %d, %d, %d)',\n" % (r, g, b, a)
             gradient_string += '];' + '\n'
@@ -156,19 +160,6 @@ class GoogleMapPlotter(object):
         settings = self._process_kwargs(kwargs)
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
-
-    # def polygon(self, lats, lngs, color='#FF0000', c=None, *args, **kwargs):
-    #     for lat, lng in zip(lats, lngs):
-    #         self.polygons.append((lat, lng))
-    # def write_polygon(self, f, path,
-    #                   clickable=False,
-    #                   geodesic=True,
-    #                   fillColor="#000000",
-    #                   fillOpacity=0.0,
-    #                   strokeColor="#FF0000",
-    #                   strokeOpacity=1.0,
-    #                   strokeWeight=1
-    # ):
 
     # create the html file which include one google map and all points and
     # paths
@@ -187,7 +178,6 @@ class GoogleMapPlotter(object):
         self.write_map(f)
         self.write_grids(f)
         self.write_points(f)
-        self.write_radpoints(f)
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
@@ -237,19 +227,9 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2])
 
-    def write_radpoints(self, f):
-        for rpoint in self.radpoints:
-            path = self.get_cycle(rpoint[0:3])
-            #default_settings = dict(strokeColor=rpoint[3], fillColor="#FA03A3", fillOpacity=0.5)
-            default_settings = dict(edge_color=rpoint[3], face_color="#FA03A3", fill_alpha=0.5)
-            default_settings = self._process_kwargs(default_settings)
-            self.write_polygon(f, path, default_settings)
-
-    def get_cycle(self, rpoint):
+    def get_cycle(self, lat, lng, rad):
+        # unit of radius: meter
         cycle = []
-        lat = rpoint[0]
-        lng = rpoint[1]
-        rad = rpoint[2]  # unit: meter
         d = (rad / 1000.0) / 6378.8
         lat1 = (math.pi / 180.0) * lat
         lng1 = (math.pi / 180.0) * lng
@@ -379,9 +359,11 @@ if __name__ == "__main__":
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
     mymap.marker(37.427, -122.145, "yellow")
+    mymap.marker(37.428, -122.146, "cornflowerblue")
+    mymap.marker(37.429, -122.144, "k")
     lat, lng = mymap.geocode("Stanford University")
     mymap.marker(lat, lng, "red")
-    mymap.circle(37.429, -122.145, 95, "#FF0000")
+    mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
     path2 = [[i+.01 for i in path[0]], [i+.02 for i in path[1]]]
@@ -393,5 +375,10 @@ if __name__ == "__main__":
     mymap.polygon(path3[0], path3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
     mymap.heatmap(path4[0], path4[1], threshold=10, radius=40)
     mymap.heatmap(path3[0], path3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
+    mymap.scatter(path4[0], path4[1], c='r', marker=True)
+    mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.1)
+    # Get more points with:
+    # http://www.findlatitudeandlongitude.com/click-lat-lng-list/
     mymap.draw('./mymap.html')
+
 
