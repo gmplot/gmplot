@@ -1,0 +1,2 @@
+recursive-include gmplot *.png
+recursive-include gmplot *.py
