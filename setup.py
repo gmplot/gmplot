@@ -11,6 +11,7 @@ setup(
     version = __version__,
     author = 'Michael Woods',
     author_email = 'physicsmichael@gmail.com',
+    url = 'https://github.com/vgm64/gmplot',
     py_modules = ['gmplot'],
     description = 'Provide a matplotlib like interface to plotting data with Google Maps',
     long_description=read('README.rst'),
