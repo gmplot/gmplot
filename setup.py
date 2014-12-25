@@ -1,5 +1,6 @@
 import os
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup, find_packages
 
 __version__ = '0.0.1'
 
@@ -12,7 +13,7 @@ setup(
     author = 'Michael Woods',
     author_email = 'physicsmichael@gmail.com',
     url = 'https://github.com/vgm64/gmplot',
-    py_modules = ['gmplot'],
+    py_modules = find_packages(),
     description = 'Provide a matplotlib like interface to plotting data with Google Maps',
     long_description=read('README.rst'),
     license='MIT',
