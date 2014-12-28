@@ -50,5 +50,5 @@ Code hosted on `GitHub <https://github.com/vgm64/gmplot>`_
 
 Inspired by Yifei Jiang's (jiangyifei@gmail.com) pygmaps_ module.
 
-.. _pygmaps http://code.google.com/p/pygmaps/
+.. _pygmaps: http://code.google.com/p/pygmaps/
 
