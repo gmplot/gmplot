@@ -29,6 +29,7 @@ longitude, and zoom level during initialization, grab your gmplot instance with
 a location:
 
 ::
+
     gmap = gmplot.from_geocode("San Francisco")
 
 Plot types
