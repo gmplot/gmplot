@@ -6,9 +6,16 @@ import os
 from color_dicts import mpl_color_map, html_color_codes
 
 
+def safe_iter(var):
+    try:
+        return iter(var)
+    except TypeError:
+        return [var]
+
+
 class GoogleMapPlotter(object):
 
-    def __init__(self, centerLat, centerLng, zoom):
+    def __init__(self, center_lat, center_lng, zoom):
         self.center = (float(centerLat), float(centerLng))
         self.zoom = int(zoom)
         self.grids = None
@@ -45,7 +52,7 @@ class GoogleMapPlotter(object):
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:]))
 
-    def scatter(self, lats, lngs, marker=True, color=None, c=None, size=None, s=None, **kwargs):
+    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
