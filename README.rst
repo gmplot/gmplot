@@ -48,6 +48,8 @@ Misc.
 
 Code hosted on `GitHub <https://github.com/vgm64/gmplot>`_
 
+Install easily with ``pip install gmplot`` from PyPI.
+
 Inspired by Yifei Jiang's (jiangyifei@gmail.com) pygmaps_ module.
 
 .. _pygmaps: http://code.google.com/p/pygmaps/
