@@ -16,7 +16,7 @@ def safe_iter(var):
 class GoogleMapPlotter(object):
 
     def __init__(self, center_lat, center_lng, zoom):
-        self.center = (float(centerLat), float(centerLng))
+        self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
         self.grids = None
         self.paths = []
