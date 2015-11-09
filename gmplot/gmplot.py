@@ -102,7 +102,7 @@ class GoogleMapPlotter(object):
                             settings["face_color"]
 
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
-        for key, color in settings.iteritems():
+        for key, color in settings.items():
             if 'color' in key:
                 color = self.color_dict.get(color, color)
                 color = self.html_color_codes.get(color, color)
