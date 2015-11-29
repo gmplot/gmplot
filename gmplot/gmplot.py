@@ -25,7 +25,7 @@ class GoogleMapPlotter(object):
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png').replace('\\', '/')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
