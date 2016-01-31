@@ -1,1 +1,1 @@
-from gmplot import GoogleMapPlotter
+from .gmplot import GoogleMapPlotter
