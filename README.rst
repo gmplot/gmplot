@@ -30,7 +30,7 @@ a location:
 
 ::
 
-    gmap = gmplot.from_geocode("San Francisco")
+    gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco")
 
 Plot types
 ----------
