@@ -2,6 +2,7 @@ import math
 import requests
 import json
 import os
+import platform
 
 from color_dicts import mpl_color_map, html_color_codes
 
@@ -25,7 +26,10 @@ class GoogleMapPlotter(object):
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        if platform.system() == 'Windows':
+            self.coloricon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'markers\\%s.png')
+        else:
+            self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png') # I found in 32-bit windows python 2.7 this didn't work
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
