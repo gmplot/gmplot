@@ -28,10 +28,10 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         if platform.system() == 'Windows':
-            self.coloricon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'markers\\%s.png')
+            self.coloricon = os.path.join(os.path.dirname(__file__), os.path.join('markers', '%s.png'))
             self.coloricon = re.sub(r'\\', r'/', self.coloricon)
         else:
-            self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png') # I found in 32-bit windows python 2.7 this didn't work
+            self.coloricon = os.path.join(os.path.dirname(__file__), os.path.join('markers', '%s.png')) # I found in 32-bit windows python 2.7 this didn't work
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
