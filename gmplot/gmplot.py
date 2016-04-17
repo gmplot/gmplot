@@ -51,7 +51,7 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title=None):
+    def marker(self, lat, lng, color='#FF0000', c=None, title=None, defaultMarker=None, **kwargs):
         if c:
             color = c
         color = self.color_dict.get(color, color)
@@ -61,22 +61,25 @@ class GoogleMapPlotter(object):
         else:
             self.points.append((lat, lng, color[1:]))
 
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, titles=None, **kwargs):
+    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, titles=None, defaultMarker=None, **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
         kwargs["size"] = size
-        settings = self._process_kwargs(kwargs)
+        kwargs["defaultMarker"] = defaultMarker
         if titles != None:
             for lat, lng, tit in zip(lats, lngs, titles):
+                kwargs["title"] = tit
+                settings = self._process_kwargs(kwargs)
                 if marker:
-                    self.marker(lat, lng, settings['color'], title=tit)
+                    self.marker(lat, lng, **settings)
                 else:
                     self.circle(lat, lng, size, **settings)
         else:
+            settings = self._process_kwargs(kwargs)
             for lat, lng in zip(lats, lngs):
                 if marker:
-                    self.marker(lat, lng, settings['color'])
+                    self.marker(lat, lng, **settings)
                 else:
                     self.circle(lat, lng, size, **settings)
 
@@ -116,6 +119,10 @@ class GoogleMapPlotter(object):
                             kwargs.get("c", None) or \
                             settings["edge_color"] or \
                             settings["face_color"]
+                            
+        settings["title"] = kwargs.get("title", None)
+        
+        settings["defaultMarker"] = kwargs.get("defaultMarker", None)
 
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
