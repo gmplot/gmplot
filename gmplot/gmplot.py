@@ -51,24 +51,34 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None):
+    def marker(self, lat, lng, color='#FF0000', c=None, title=None):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:]))
+        if title!=None:
+            self.points.append((lat, lng, color[1:], title))
+        else:
+            self.points.append((lat, lng, color[1:]))
 
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
+    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, titles=None, **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
         kwargs["size"] = size
         settings = self._process_kwargs(kwargs)
-        for lat, lng in zip(lats, lngs):
-            if marker:
-                self.marker(lat, lng, settings['color'])
-            else:
-                self.circle(lat, lng, size, **settings)
+        if titles != None:
+            for lat, lng, tit in zip(lats, lngs, titles):
+                if marker:
+                    self.marker(lat, lng, settings['color'], title=tit)
+                else:
+                    self.circle(lat, lng, size, **settings)
+        else:
+            for lat, lng in zip(lats, lngs):
+                if marker:
+                    self.marker(lat, lng, settings['color'])
+                else:
+                    self.circle(lat, lng, size, **settings)
 
     def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
         color = color or c
@@ -238,7 +248,10 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2])
+            if len(point) == 3:
+                self.write_point(f, point[0], point[1], point[2])
+            else:
+                self.write_point(f, point[0], point[1], point[2], point[3])
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -280,11 +293,13 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
+    def write_point(self, f, lat, lon, color, title=None):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
+        if title != None:
             f.write('\t\ttitle: "' + title + '",\n')
         else:
             f.write('\t\ttitle: "no implementation",\n')
