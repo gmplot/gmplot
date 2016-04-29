@@ -255,7 +255,7 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2])
+            self.write_marker(f, point[0], point[1], point[2])
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -297,17 +297,17 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color):
+    def write_marker(self, f, lat, lon, color, name='marker'):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\tvar %s = new google.maps.Marker({\n' % name)
         f.write('\t\ttitle: "no implementation",\n')
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\t\t%s.setMap(map);\n' % name)
         f.write('\n')
 
     def write_polyline(self, f, path, settings):
