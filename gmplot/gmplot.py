@@ -29,6 +29,7 @@ class GoogleMapPlotter(object):
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
         self._fitBounds = None
+        self._symbols = {}
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -176,6 +177,16 @@ class GoogleMapPlotter(object):
         #       for every new object added to the map
         self._fitBounds = (latNE, lngNE, latSW, lngSW)
 
+    def add_symbol(self, name, properties):
+        """add a gmap symbol to the map objects, which can then be used in markers/polylines
+
+        name: the variable name (which you will reference in the other objects)
+        properties: a dictionary with the symbol properties
+
+        Ref: https://developers.google.com/maps/documentation/javascript/symbols"""
+
+        self._symbols[name] = properties
+
     # create the html file which include one google map and all points and
     # paths
     def draw(self, htmlfile):
@@ -191,6 +202,7 @@ class GoogleMapPlotter(object):
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
         self.write_map(f)
+        self.write_symbols(f)  # symbols have to be defined before being used
         self.write_grids(f)
         self.write_points(f)
         self.write_paths(f)
@@ -375,6 +387,14 @@ class GoogleMapPlotter(object):
             f.write('    new google.maps.LatLng(%f, %f),\n'  % self._fitBounds[:2])
             f.write('    new google.maps.LatLng(%f, %f));\n' % self._fitBounds[2:])
             f.write('map.fitBounds(rectBounds);\n')
+
+    def write_symbols(self, f):
+        for name in self._symbols:
+            f.write('\n')
+            f.write('var %s = {\n' % name)
+            for k in self._symbols[name]:
+                f.write('    %s: %s,\n' % (k, self._symbols[name][k]))
+            f.write('};\n\n')
 
 if __name__ == "__main__":
 
