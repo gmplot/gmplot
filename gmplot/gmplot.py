@@ -31,6 +31,7 @@ class GoogleMapPlotter(object):
         self.title = 'Google Maps - gmplot'
         self._fitBounds = None
         self._symbols = {}
+        self._infowindows = []
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -189,6 +190,15 @@ class GoogleMapPlotter(object):
 
         self._symbols[name] = properties
 
+    def infowindow(self, content, lat, lng):
+        """Add an info window with the given content at the specified coordinates
+
+        Ref: https://developers.google.com/maps/documentation/javascript/infowindows"""
+
+        # TODO: support multiple colors, maybe refactoring the marker color code?
+
+        self._infowindows.append((content, lat, lng))
+
     # create the html file which include one google map and all points and
     # paths
     def draw(self, htmlfile):
@@ -210,6 +220,7 @@ class GoogleMapPlotter(object):
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_infowindows(f)
         self.write_fitBounds(f)
         f.write('\t}\n')
         f.write('</script>\n')
@@ -406,6 +417,19 @@ class GoogleMapPlotter(object):
             for k in self._symbols[name]:
                 f.write('    %s: %s,\n' % (k, self._symbols[name][k]))
             f.write('};\n\n')
+
+    def write_infowindows(self, f):
+        for i, infowindow in enumerate(self._infowindows):
+            content, lat, lng = infowindow
+            markername = 'infowindow_marker_%i' % i
+            infowindowname = 'infowindow_%i' % i
+            self.write_marker(f, lat, lng, color='FF0000', name=markername)
+            f.write('  var %s = new google.maps.InfoWindow({\n' % infowindowname)
+            f.write("    content: %s\n" % content)
+            f.write('  });\n')
+            f.write("  %s.addListener('click', function() {\n" % markername)
+            f.write('    %s.open(map, %s);\n' % (infowindowname, markername))
+            f.write('  });\n\n')
 
 if __name__ == "__main__":
 
