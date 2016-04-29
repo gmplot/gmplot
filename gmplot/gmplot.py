@@ -28,6 +28,7 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self.title = 'Google Maps - gmplot'
         self._fitBounds = None
         self._symbols = {}
 
@@ -198,7 +199,7 @@ class GoogleMapPlotter(object):
             '<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />\n')
         f.write(
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
-        f.write('<title>Google Maps - pygmaps </title>\n')
+        f.write('<title>%s</title>\n' % self.title)
         f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n')
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
