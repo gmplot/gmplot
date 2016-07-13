@@ -45,12 +45,12 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None):
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:]))
+        self.points.append((lat, lng, color[1:], title))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -232,7 +232,7 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2])
+            self.write_point(f, point[0], point[1], point[2], point[3])
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -274,13 +274,13 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color):
+    def write_point(self, f, lat, lon, color, title):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
-        f.write('\t\ttitle: "no implementation",\n')
+        f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
@@ -390,5 +390,3 @@ if __name__ == "__main__":
                     [-122.142048, -122.141275, -122.140503, -122.139688, -122.138872, -122.138078, -122.137241, -122.136405, -122.135568, -122.134731, -122.133894, -122.133057, -122.13222, -122.131383, -122.130557, -122.129999])
     mymap.scatter(scatter_path[0], scatter_path[1], c='r', marker=True)
     mymap.draw('./mymap.html')
-
-
