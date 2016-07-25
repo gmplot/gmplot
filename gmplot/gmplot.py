@@ -2,6 +2,9 @@ import math
 import requests
 import json
 import os
+from googlemaps import Client
+
+
 
 from .color_dicts import mpl_color_map, html_color_codes
 
