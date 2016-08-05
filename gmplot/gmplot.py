@@ -28,6 +28,7 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self.direction_points = []
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -45,12 +46,15 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation", label="no implementation"):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        self.points.append((lat, lng, color[1:], title, label))
+
+    def directions(self, orig, dest, waypoints):
+        self.direction_points.append([orig, dest, waypoints]);
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -64,9 +68,9 @@ class GoogleMapPlotter(object):
             else:
                 self.circle(lat, lng, size, **settings)
 
-    def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
+    def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
         color = color or c
-        kwargs.setdefault('face_alpha', 0.5)
+        kwargs.setdefault('face_alpha', alpha if alpha>0 else 0.5)
         kwargs.setdefault('face_color', "#000000")
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
@@ -188,6 +192,7 @@ class GoogleMapPlotter(object):
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_directions(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -232,8 +237,11 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_point(f, point[0], point[1], point[2], point[3], point[4])
 
+    def write_directions(self, f):
+        for direction in self.direction_points:
+            self.write_direction(f, direction[0], direction[1], direction[2])
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
         cycle = []
@@ -274,17 +282,43 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_point(self, f, lat, lon, color, title, label):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\tlabel: \'%s\',\n' % label)
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
         f.write('\t\tmarker.setMap(map);\n')
+        f.write('\n')
+
+    def write_direction(self, f, orig, dest, waypoints=[]):
+        f.write('\n')
+        f.write('\t\tvar start = new google.maps.LatLng(%f, %f);\n' % (float(orig.split(",")[0]), float(orig.split(",")[1])))
+        f.write('\t\tvar end = new google.maps.LatLng(%f, %f);\n' % (float(dest.split(",")[0]), float(dest.split(",")[1])))
+        f.write('\t\tvar mid = [];\n')
+
+        for waypoint in waypoints:
+		    f.write('\t\tmid.push({ location: "%f,%f", stopover: true });\n' % (waypoint[0], waypoint[1]))
+
+        f.write('\t\tvar request = {\n')
+        f.write('\t\t\torigin : start,\n')
+        f.write('\t\t\tdestination : end,\n')
+        f.write('\t\t\twaypoints : mid,\n')
+        f.write('\t\t\ttravelMode : google.maps.TravelMode.DRIVING\n')
+        f.write('\t\t};\n')
+        f.write('\t\tvar directionsService = new google.maps.DirectionsService(); \n')
+        f.write('\t\tdirectionsService.route(request, function(response, status) {\n')
+        f.write('\t\t\tif (status == google.maps.DirectionsStatus.OK) {\n')
+        f.write('\t\t\t\tdirectionsDisplay.setDirections(response);\n')
+        f.write('\t\t\t}\n')
+        f.write('\t\t});\n')
+        f.write('\t\tvar directionsDisplay = new google.maps.DirectionsRenderer();\n')
+        f.write('\t\tdirectionsDisplay.setMap(map);\n')
         f.write('\n')
 
     def write_polyline(self, f, path, settings):
