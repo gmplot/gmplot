@@ -79,7 +79,7 @@ class _Route(object):
 class GoogleMapPlotter(object):
     _HEATMAP_DEFAULT_WEIGHT = 1
 
-    def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
+    def __init__(self, center_lat, center_lng, zoom, map_type='', apikey='', **kwargs):
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
@@ -97,6 +97,7 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.title = 'Google Maps - gmplot'
         self._routes = []
+        self._map_styles = kwargs.get('map_styles', [])
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -405,6 +406,8 @@ class GoogleMapPlotter(object):
     def write_map(self, w):
         w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
         w.indent()
+        if self._map_styles:
+            w.write('styles: %s,' % json.dumps(self._map_styles, indent=4)) # TODO: Indent size defined elsewhere too; consolidate as a single constant.
         if self.map_type:
             w.write('mapTypeId: "%s",' % self.map_type.lower())
         w.write('zoom: %d,' % self.zoom)
