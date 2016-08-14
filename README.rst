@@ -73,16 +73,33 @@ Plot types
 
 .. image:: http://i.imgur.com/dTNkbZ7.png
 
-Map types
----------
+Map styling
+-----------
 
 Passing in one of the supported `map types
 <https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes>`_
-for the optional ``map_type`` parameter allows you to change the look of your map:
+for the optional ``map_type`` parameter allows you to quickly change the look of your map:
 
 .. code:: python
 
     gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_type='satellite')
+
+For further customization, you can pass in a `map styles
+<https://developers.google.com/maps/documentation/javascript/styling>`_ object:
+
+.. code:: python
+
+    map_styles = [
+        {
+            'featureType': 'all',
+            'stylers': [
+                {'saturation': -80},
+                {'lightness': 60},
+            ]
+        }
+    ]
+
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_styles=map_styles)
 
 Misc.
 -----
