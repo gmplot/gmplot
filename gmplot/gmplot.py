@@ -18,7 +18,7 @@ class GoogleMapPlotter(object):
     def __init__(self, center_lat, center_lng, zoom, apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
-        self.apikey = string(apikey)
+        self.apikey = str(apikey)
         self.grids = None
         self.paths = []
         self.shapes = []
