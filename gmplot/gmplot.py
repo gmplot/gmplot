@@ -21,13 +21,14 @@ class GoogleMapPlotter(object):
         self.grids = None
         self.paths = []
         self.shapes = []
-        self.points = []
+        self.markers = []
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self.infowindows = []
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -50,7 +51,14 @@ class GoogleMapPlotter(object):
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        marker_name = "marker%s" % str(len(self.markers)+1)
+        self.markers.append((marker_name, lat, lng, color[1:], title))
+        return marker_name
+
+    def infowindow(self, marker_name, content, always_open=False):
+        infowindow_name = "infowindow%s" % str(len(self.infowindows)+1)
+        self.infowindows.append((infowindow_name, marker_name, content, always_open))
+        return infowindow_name
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -184,7 +192,8 @@ class GoogleMapPlotter(object):
         f.write('\tfunction initialize() {\n')
         self.write_map(f)
         self.write_grids(f)
-        self.write_points(f)
+        self.write_markers(f)
+        self.write_infowindows(f)
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
@@ -230,9 +239,13 @@ class GoogleMapPlotter(object):
             settings = self._process_kwargs({"color": "#000000"})
             self.write_polyline(f, line, settings)
 
-    def write_points(self, f):
-        for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+    def write_markers(self, f):
+        for marker in self.markers:
+            self.write_marker(f, marker[0], marker[1], marker[2], marker[3], marker[4])
+
+    def write_infowindows(self, f):
+        for infowindow in self.infowindows:
+            self.write_infowindow(f, infowindow[0], infowindow[1], infowindow[2], infowindow[3])
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -274,17 +287,28 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_marker(self, f, marker_name, lat, lon, color, title):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
-        f.write('\t\ttitle: "%s",\n' % title)
-        f.write('\t\ticon: img,\n')
-        f.write('\t\tposition: latlng\n')
+        f.write('\t\tvar %s = new google.maps.Marker({\n' % marker_name)
+        f.write('\t\t\ttitle: "%s",\n' % title)
+        f.write('\t\t\ticon: img,\n')
+        f.write('\t\t\tposition: latlng\n')
         f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\t\t%s.setMap(map);\n' % marker_name)
+        f.write('\n')
+
+    def write_infowindow(self, f, infowindow_name, marker_name, content, always_open):
+        f.write('\t\tvar %s = new google.maps.InfoWindow({\n' % infowindow_name)
+        f.write('\t\t\tcontent: "%s"\n' % content)
+        f.write('\t\t});\n')
+        f.write('\t\tgoogle.maps.event.addListener(%s, "click", function(e) {\n' % marker_name)
+        f.write('\t\t\t%s.open(map, this);\n' % infowindow_name)
+        f.write('\t\t});\n')
+        if (always_open):
+            f.write('\t\t%s.open(map, %s);\n' % (infowindow_name, marker_name))
         f.write('\n')
 
     def write_polyline(self, f, path, settings):
