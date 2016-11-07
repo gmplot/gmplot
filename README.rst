@@ -32,6 +32,19 @@ a location:
 
     gmap = gmplot.from_geocode("San Francisco")
 
+
+Info Windows
+----------
+
+``gmplot`` contains a simple way to attach an info window to a marker like Google Maps API. Here's an example:
+
+::
+
+    marker_name = gmap.marker(lat, lng, color='#FF0000')
+    content = "some content"
+    gmap.infowindow(marker_name, content, True)
+
+
 Plot types
 ----------
 
