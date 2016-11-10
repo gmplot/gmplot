@@ -29,6 +29,7 @@ class GoogleMapPlotter(object):
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
         self.infowindows = []
+        self.marker_clusterer = None
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -46,19 +47,22 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation", draggable=True):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
         marker_name = "marker%s" % str(len(self.markers)+1)
-        self.markers.append((marker_name, lat, lng, color[1:], title))
+        self.markers.append((marker_name, lat, lng, color[1:], title, draggable))
         return marker_name
 
     def infowindow(self, marker_name, content, always_open=False):
         infowindow_name = "infowindow%s" % str(len(self.infowindows)+1)
         self.infowindows.append((infowindow_name, marker_name, content, always_open))
         return infowindow_name
+
+    def markerClusterer(self, markers_names, maxZoom):
+        self.marker_clusterer = (markers_names, maxZoom)
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -194,11 +198,13 @@ class GoogleMapPlotter(object):
         self.write_grids(f)
         self.write_markers(f)
         self.write_infowindows(f)
+        self.write_markerclusterer(f)
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
         f.write('\t}\n')
         f.write('</script>\n')
+        self.write_markerclusterer_dependencies(f)
         f.write('</head>\n')
         f.write(
             '<body style="margin:0px; padding:0px;" onload="initialize()">\n')
@@ -241,7 +247,7 @@ class GoogleMapPlotter(object):
 
     def write_markers(self, f):
         for marker in self.markers:
-            self.write_marker(f, marker[0], marker[1], marker[2], marker[3], marker[4])
+            self.write_marker(f, marker[0], marker[1], marker[2], marker[3], marker[4], marker[5])
 
     def write_infowindows(self, f):
         for infowindow in self.infowindows:
@@ -287,7 +293,7 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_marker(self, f, marker_name, lat, lon, color, title):
+    def write_marker(self, f, marker_name, lat, lon, color, title, draggable):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
@@ -295,7 +301,8 @@ class GoogleMapPlotter(object):
         f.write('\t\tvar %s = new google.maps.Marker({\n' % marker_name)
         f.write('\t\t\ttitle: "%s",\n' % title)
         f.write('\t\t\ticon: img,\n')
-        f.write('\t\t\tposition: latlng\n')
+        f.write('\t\t\tposition: latlng,\n')
+        f.write('\t\t\tdraggable: %s\n' % str(draggable).lower())
         f.write('\t\t});\n')
         f.write('\t\t%s.setMap(map);\n' % marker_name)
         f.write('\n')
@@ -310,6 +317,16 @@ class GoogleMapPlotter(object):
         if (always_open):
             f.write('\t\t%s.open(map, %s);\n' % (infowindow_name, marker_name))
         f.write('\n')
+        
+    def write_markerclusterer(self, f):
+        if self.marker_clusterer:
+            markers_names = '['+', '.join(self.marker_clusterer[0])+']'
+            f.write('\t\tvar markerCluster = new MarkerClusterer(map, %s,\n' % markers_names);
+            f.write('\t\t\t{imagePath: "https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m", maxZoom: %s});\n\n' % self.marker_clusterer[1]);
+
+    def write_markerclusterer_dependencies(self, f):
+        if self.marker_clusterer:
+            f.write('<script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>\n')
 
     def write_polyline(self, f, path, settings):
         clickable = False
