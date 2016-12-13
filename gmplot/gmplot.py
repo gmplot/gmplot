@@ -15,7 +15,7 @@ def safe_iter(var):
 
 class GoogleMapPlotter(object):
 
-    def __init__(self, center_lat, center_lng, zoom):
+    def __init__(self, center_lat, center_lng, zoom, map_type = 'ROADMAP', tilt = None, add_scale = False):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
         self.grids = None
@@ -28,6 +28,9 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self.map_type = map_type
+        self.tilt = tilt
+        self.add_scale = add_scale
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13):
@@ -268,10 +271,14 @@ class GoogleMapPlotter(object):
         f.write('\t\tvar myOptions = {\n')
         f.write('\t\t\tzoom: %d,\n' % (self.zoom))
         f.write('\t\t\tcenter: centerlatlng,\n')
-        f.write('\t\t\tmapTypeId: google.maps.MapTypeId.ROADMAP\n')
+        f.write('\t\t\tmapTypeId: google.maps.MapTypeId.%s,\n' % self.map_type)
+        if self.add_scale:
+            f.write('\t\t\tscaleControl: true\n')
         f.write('\t\t};\n')
         f.write(
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
+        if self.tilt is not None:
+            f.write('\t\tmap.setTilt(%d)\n' % self.tilt)
         f.write('\n')
 
     def write_point(self, f, lat, lon, color, title):
