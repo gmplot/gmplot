@@ -1,17 +1,17 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = '1.1.1'
+__version__ = '1.0.1'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = 'gmplot',
+    name = 'aviplot',
     version = __version__,
-    author = 'Michael Woods',
-    author_email = 'physicsmichael@gmail.com',
-    url = 'https://github.com/vgm64/gmplot',
+    author = 'Avijit Ghosh',
+    author_email = 'avijitg22@gmail.com',
+    url = 'https://github.com/AvijitGhosh82/aviplot',
     description = 'Provide a matplotlib like interface to plotting data with Google Maps',
     long_description=read('README.rst'),
     license='MIT',
@@ -19,7 +19,7 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     package_data = {
-        'gmplot': ['markers/*.png'],
+        'aviplot': ['markers/*.png'],
     },
     install_requires=['requests'],
 )

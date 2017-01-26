@@ -1,2 +1,2 @@
-recursive-include gmplot *.png
-recursive-include gmplot *.py
+recursive-include aviplot *.png
+recursive-include aviplot *.py

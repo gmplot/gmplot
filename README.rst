@@ -1,4 +1,4 @@
-gmplot
+aviplot
 ======
 
 Plotting data on Google Maps, the easy way. A matplotlib-like
@@ -8,9 +8,9 @@ make creating exploratory map views effortless. Here's a crash course:
 
 ::
 
-    import gmplot
+    import aviplot
 
-    gmap = gmplot.GoogleMapPlotter(37.428, -122.145, 16)
+    gmap = aviplot.GoogleMapPlotter(37.428, -122.145, 16)
 
     gmap.plot(latitudes, longitudes, 'cornflowerblue', edge_width=10)
     gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
@@ -23,14 +23,14 @@ make creating exploratory map views effortless. Here's a crash course:
 Geocoding
 ---------
 
-``gmplot`` contains a simple wrapper around Google's geocoding service enabling
+``aviplot`` contains a simple wrapper around Google's geocoding service enabling
 map initilization to the location of your choice. Rather than providing latitude,
-longitude, and zoom level during initialization, grab your gmplot instance with
+longitude, and zoom level during initialization, grab your aviplot instance with
 a location:
 
 ::
 
-    gmap = gmplot.from_geocode("San Francisco")
+    gmap = aviplot.from_geocode("San Francisco")
 
 Plot types
 ----------
@@ -46,9 +46,9 @@ Plot types
 Misc.
 -----
 
-Code hosted on `GitHub <https://github.com/vgm64/gmplot>`_
+Code hosted on `GitHub <https://github.com/AvijitGhosh82/aviplot>`_
 
-Install easily with ``pip install gmplot`` from PyPI.
+Install easily with ``pip install aviplot`` from PyPI.
 
 Inspired by Yifei Jiang's (jiangyifei@gmail.com) pygmaps_ module.
 
