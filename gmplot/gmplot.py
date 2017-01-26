@@ -3,6 +3,7 @@ import requests
 import json
 import os
 
+from markers import marker_base64
 from .color_dicts import mpl_color_map, html_color_codes
 
 
@@ -25,7 +26,6 @@ class GoogleMapPlotter(object):
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
@@ -277,8 +277,7 @@ class GoogleMapPlotter(object):
     def write_point(self, f, lat, lon, color, title):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
-        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
-                (self.coloricon % color))
+        f.write('\t\tvar img = new google.maps.MarkerImage(\"data:image/png;base64,%s\");\n' % (marker_base64(color)))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
