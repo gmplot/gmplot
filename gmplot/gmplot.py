@@ -22,10 +22,12 @@ class GoogleMapPlotter(object):
         self.paths = []
         self.shapes = []
         self.points = []
+        self.text_points = []
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.coloricon = self.coloricon.replace('\\', '\\\\')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
@@ -51,6 +53,13 @@ class GoogleMapPlotter(object):
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:], title))
+    
+    def text(self, lat, lng, color='#000000', c=None, text="no implementation"):
+        if c:
+            color = c
+        color = self.color_dict.get(color, color)
+        color = self.html_color_codes.get(color, color)
+        self.text_points.append((lat, lng, color[1:], text))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -188,6 +197,7 @@ class GoogleMapPlotter(object):
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_text(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -233,6 +243,28 @@ class GoogleMapPlotter(object):
     def write_points(self, f):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2], point[3])
+ 
+    def write_text(self, f):
+        for text_point in self.text_points:
+            self.write_text_point(f, text_point[0], text_point[1], text_point[2], text_point[3])
+			
+    def write_text_point(self, f, lat, lon, color, text):
+        f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
+                (lat, lon))
+        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
+                (self.coloricon % 'clear'))
+        f.write('\t\tvar marker = new google.maps.Marker({\n')
+		
+        f.write('\t\tlabel: {\
+    color: "%(1)s",\
+    fontWeight: "bold",\
+    text: "%(2)s" },\n' % {'1':color, '2': text})
+        f.write('\t\ticon: img,\n')
+        f.write('\t\tposition: latlng\n')
+        f.write('\t\t});\n')
+        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\n')
+
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
