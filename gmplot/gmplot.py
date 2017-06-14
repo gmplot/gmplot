@@ -16,6 +16,8 @@ def safe_iter(var):
 class GoogleMapPlotter(object):
 
     def __init__(self, center_lat, center_lng, zoom):
+        self.styleset = False
+        self.style = None
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
         self.grids = None
@@ -44,6 +46,20 @@ class GoogleMapPlotter(object):
 
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
+
+    def setstyle(self,stylestring):
+        if not isinstance(stylestring,str):
+            raise TypeError("variable needs to be a json object as a string")
+        self.style = stylestring
+
+    def loadstyle(self,styletype='silver'):
+        stylepath = os.path.join(os.path.dirname(__file__), 'styles/%s.txt')
+        if os.path.exists(stylepath%styletype):
+            with open(stylepath%styletype,'r') as f:
+                self.style = f.read()
+            self.styleset = True
+        else:
+            raise ValueError("Style file not available")
 
     def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
         if c:
@@ -263,15 +279,27 @@ class GoogleMapPlotter(object):
 
     # TODO: Add support for mapTypeId: google.maps.MapTypeId.SATELLITE
     def write_map(self,  f):
+        if self.styleset:
+            f.write('\t\tvar stylez = {}\n'.format(self.style))
+            f.write('\t\tvar mapType = new google.maps.StyledMapType(stylez, { name:"MyStyle" });')
         f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
                 (self.center[0], self.center[1]))
         f.write('\t\tvar myOptions = {\n')
         f.write('\t\t\tzoom: %d,\n' % (self.zoom))
         f.write('\t\t\tcenter: centerlatlng,\n')
-        f.write('\t\t\tmapTypeId: google.maps.MapTypeId.ROADMAP\n')
+        if self.styleset:
+             f.write('\t\t\tmapTypeControlOptions: {\n')
+             f.write('\t\t\t\tmapTypeIds: [google.maps.MapTypeId.ROADMAP, "mynewstyle"]\n')
+             f.write('\t\t\t}\n')
+        else:
+            f.write('\t\t\tmapTypeId: google.maps.MapTypeId.ROADMAP\n')
         f.write('\t\t};\n')
         f.write(
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
+        if self.styleset:
+            f.write('\t\tmap.mapTypes.set("mynewstyle", mapType);\n')
+            f.write('\t\tmap.setMapTypeId("mynewstyle");\n')
+
         f.write('\n')
 
     def write_point(self, f, lat, lon, color, title):
