@@ -119,7 +119,7 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, dissipating=True):
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, dissipating=True, maxIntensity=False):
         """
         :param lats: list of latitudes
         :param lngs: list of longitudes
@@ -133,6 +133,7 @@ class GoogleMapPlotter(object):
         settings['gradient'] = gradient
         settings['opacity'] = opacity
         settings['dissipating'] = dissipating
+        settings['maxIntensity']=maxIntensity
         settings = self._process_heatmap_kwargs(settings)
 
         heatmap_points = []
@@ -145,6 +146,7 @@ class GoogleMapPlotter(object):
         settings_string += "heatmap.set('threshold', %d);\n" % settings_dict['threshold']
         settings_string += "heatmap.set('radius', %d);\n" % settings_dict['radius']
         settings_string += "heatmap.set('opacity', %f);\n" % settings_dict['opacity']
+        settings_string += "heatmap.set('maxIntensity',%f)\n" % settings_dict['maxIntensity']
 
         dissipation_string = 'true' if settings_dict['dissipating'] else 'false'
         settings_string += "heatmap.set('dissipating', %s);\n" % (dissipation_string)
