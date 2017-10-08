@@ -45,22 +45,22 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+    def marker(self, lat, lng, title="no implementation", color='#FF0000', c=None):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:], title))
 
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
+    def scatter(self, lats, lngs, titles, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
         kwargs["size"] = size
         settings = self._process_kwargs(kwargs)
-        for lat, lng in zip(lats, lngs):
+        for lat, lng, title in zip(lats, lngs, titles):
             if marker:
-                self.marker(lat, lng, settings['color'])
+                self.marker(lat, lng, title, settings['color'])
             else:
                 self.circle(lat, lng, size, **settings)
 
