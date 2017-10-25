@@ -10,7 +10,7 @@ make creating exploratory map views effortless. Here's a crash course:
 
     import gmplot
 
-    gmap = gmplot.GoogleMapPlotter(37.428, -122.145, 16)
+    gmap = gmplot.GoogleMapPlotter(37.428, -122.145, 16, apikey=YOUR_GOOGLE_API_KEY)
 
     gmap.plot(latitudes, longitudes, 'cornflowerblue', edge_width=10)
     gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
@@ -19,6 +19,7 @@ make creating exploratory map views effortless. Here's a crash course:
 
     gmap.draw("mymap.html")
 
+You can get your google api key on the `google developers site <https://developers.google.com/maps/documentation/javascript/get-api-key>`_.
 
 Geocoding
 ---------
