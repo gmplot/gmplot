@@ -15,9 +15,10 @@ def safe_iter(var):
 
 class GoogleMapPlotter(object):
 
-    def __init__(self, center_lat, center_lng, zoom):
+    def __init__(self, center_lat, center_lng, zoom, apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
+        self.apikey = str(apikey)
         self.grids = None
         self.paths = []
         self.shapes = []
@@ -179,7 +180,10 @@ class GoogleMapPlotter(object):
         f.write(
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
         f.write('<title>Google Maps - pygmaps </title>\n')
-        f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n')
+        if self.apikey:
+            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false&key=%s"></script>\n' % self.apikey )
+        else:
+            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n' )
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
         self.write_map(f)
