@@ -27,6 +27,7 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.num_img_labels = 0
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
@@ -51,7 +52,8 @@ class GoogleMapPlotter(object):
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        # allow for each marker to have its own coloricon
+        self.points.append((lat, lng, color[1:], title, self.coloricon))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
@@ -236,7 +238,7 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_point(f, point[0], point[1], point[2], point[3], point[4])
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -278,14 +280,18 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_point(self, f, lat, lon, color, title, coloricon_url):
+        # if the map icon changes from one point to another, then we need to change the img varible name so that it
+        # references the new one
+        self.num_img_labels += 1
+        img_var_name = "img"+str(self.num_img_labels)
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
-        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
-                (self.coloricon % color))
+        f.write('\t\tvar '+img_var_name+' = new google.maps.MarkerImage(\'%s\');\n' %
+                (coloricon_url % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
         f.write('\t\ttitle: "%s",\n' % title)
-        f.write('\t\ticon: img,\n')
+        f.write('\t\ticon: '+img_var_name+',\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
         f.write('\t\tmarker.setMap(map);\n')
