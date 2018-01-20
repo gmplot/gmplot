@@ -120,10 +120,11 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, dissipating=True):
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=None, dissipating=True):
         """
         :param lats: list of latitudes
         :param lngs: list of longitudes
+        :param maxIntensity:(int) max frequency to use when plotting. Default (None) uses max value on map domain.
         :param threshold:
         :param radius: The hardest param. Example (string):
         :return:
@@ -133,6 +134,7 @@ class GoogleMapPlotter(object):
         settings['radius'] = radius
         settings['gradient'] = gradient
         settings['opacity'] = opacity
+        settings['maxIntensity'] = maxIntensity
         settings['dissipating'] = dissipating
         settings = self._process_heatmap_kwargs(settings)
 
@@ -145,6 +147,7 @@ class GoogleMapPlotter(object):
         settings_string = ''
         settings_string += "heatmap.set('threshold', %d);\n" % settings_dict['threshold']
         settings_string += "heatmap.set('radius', %d);\n" % settings_dict['radius']
+        settings_string += "heatmap.set('maxIntensity', %d);\n" % settings_dict['maxIntensity']
         settings_string += "heatmap.set('opacity', %f);\n" % settings_dict['opacity']
 
         dissipation_string = 'true' if settings_dict['dissipating'] else 'false'
