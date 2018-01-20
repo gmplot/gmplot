@@ -4,6 +4,8 @@ import json
 import os
 
 from .color_dicts import mpl_color_map, html_color_codes
+from google_maps_templates import CIRCLE
+
 
 
 def safe_iter(var):
@@ -23,6 +25,7 @@ class GoogleMapPlotter(object):
         self.paths = []
         self.shapes = []
         self.points = []
+        self.circles = []
         self.heatmap_points = []
         self.radpoints = []
         self.gridsetting = None
@@ -71,8 +74,7 @@ class GoogleMapPlotter(object):
         kwargs.setdefault('face_color', "#000000")
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
-        path = self.get_cycle(lat, lng, radius)
-        self.shapes.append((path, settings))
+        self.circles.append(((lat, lng, radius), settings))
 
     def _process_kwargs(self, kwargs):
         settings = dict()
@@ -110,7 +112,6 @@ class GoogleMapPlotter(object):
                 settings[key] = color
 
         settings["closed"] = kwargs.get("closed", None)
-
         return settings
 
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
@@ -190,6 +191,7 @@ class GoogleMapPlotter(object):
         self.write_grids(f)
         self.write_points(f)
         self.write_paths(f)
+        self.write_circles(f)
         self.write_shapes(f)
         self.write_heatmap(f)
         f.write('\t}\n')
@@ -237,6 +239,10 @@ class GoogleMapPlotter(object):
     def write_points(self, f):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2], point[3])
+
+    def write_circles(self, f):
+        for circle, settings in self.circles:
+            self.write_circle(f, circle[0], circle[1], circle[2], settings)
 
     def get_cycle(self, lat, lng, rad):
         # unit of radius: meter
@@ -290,6 +296,16 @@ class GoogleMapPlotter(object):
         f.write('\t\t});\n')
         f.write('\t\tmarker.setMap(map);\n')
         f.write('\n')
+
+    def write_circle(self, f, lat, lon, radius, settings):
+        strokeColor = settings.get('color') or settings.get('edge_color')
+        strokeOpacity = settings.get('edge_alpha')
+        strokeWeight = settings.get('edge_width')
+        fillColor = settings.get('face_color')
+        fillOpacity = settings.get('face_alpha')
+        f.write(CIRCLE.format(lat=lat, lon=lon, radius=radius, strokeColor=strokeColor,
+                              strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
+                              fillColor=fillColor, fillOpacity=fillOpacity))
 
     def write_polyline(self, f, path, settings):
         clickable = False
