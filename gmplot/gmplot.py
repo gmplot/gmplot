@@ -301,8 +301,11 @@ class GoogleMapPlotter(object):
         strokeColor = settings.get('color') or settings.get('edge_color')
         strokeOpacity = settings.get('edge_alpha')
         strokeWeight = settings.get('edge_width')
+        fillColor = settings.get('face_color')
+        fillOpacity = settings.get('face_alpha')
         f.write(CIRCLE.format(lat=lat, lon=lon, radius=radius, strokeColor=strokeColor,
-                              strokeOpacity=strokeOpacity, strokeWeight=strokeWeight))
+                              strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
+                              fillColor=fillColor, fillOpacity=fillOpacity))
 
     def write_polyline(self, f, path, settings):
         clickable = False

@@ -5,8 +5,8 @@ var circle = new google.maps.Circle({{
     strokeColor: '{strokeColor}',
     strokeOpacity: {strokeOpacity},
     strokeWeight: {strokeWeight},
-    fillColor: '#FF0000',
-    fillOpacity: 0.35,
+    fillColor: '{fillColor}',
+    fillOpacity: {fillOpacity},
     map: map,
     center: center,
     radius: radius
