@@ -4,7 +4,8 @@ import json
 import os
 
 from .color_dicts import mpl_color_map, html_color_codes
-from google_maps_templates import CIRCLE, MARKER, SYMBOLS
+from google_maps_templates import CIRCLE
+
 
 
 def safe_iter(var):
@@ -48,24 +49,14 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    # def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
-    #     if c:
-    #         color = c
-    #     color = self.color_dict.get(color, color)
-    #     color = self.html_color_codes.get(color, color)
-    #     self.points.append((lat, lng, color[1:], title))
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+        if c:
+            color = c
+        color = self.color_dict.get(color, color)
+        color = self.html_color_codes.get(color, color)
+        self.points.append((lat, lng, color[1:], title))
 
-    def marker(self, lat, lng, color=None, c=None, **kwargs):
-        color = color or c
-        kwargs.setdefault('face_alpha', 0.5)
-        kwargs.setdefault('face_color', "#000000")
-        kwargs.setdefault('color', color)
-        kwargs.setdefault('symbol', '')
-        settings = self._process_kwargs(kwargs)
-        self.points.append(((lat, lng), settings))
-
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None,
-                symbol=None, **kwargs):
+    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
@@ -75,10 +66,7 @@ class GoogleMapPlotter(object):
             if marker:
                 self.marker(lat, lng, settings['color'])
             else:
-                if symbol is None:
-                    self.circle(lat, lng, size, **settings)
-                else:
-                    self
+                self.circle(lat, lng, size, **settings)
 
     def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
         color = color or c
@@ -115,14 +103,6 @@ class GoogleMapPlotter(object):
                             kwargs.get("c", None) or \
                             settings["edge_color"] or \
                             settings["face_color"]
-
-        symbol = kwargs.get('symbol', '')
-        try:
-            settings['icon'] = SYMBOLS.get(symbol).format(strokeColor=settings["edge_color"],
-                                                           fillColor=settings["face_color"],
-                                                           fillOpacity=settings['face_alpha'])
-        except AttributeError:
-            settings['icon'] = "google.maps.MarkerImage('%s')" % (self.coloricon % settings['color'])
 
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
@@ -257,8 +237,8 @@ class GoogleMapPlotter(object):
             self.write_polyline(f, line, settings)
 
     def write_points(self, f):
-        for point, settings in self.points:
-            self.write_point(f, point[0], point[1], settings)
+        for point in self.points:
+            self.write_point(f, point[0], point[1], point[2], point[3])
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -304,27 +284,18 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    # def write_point(self, f, lat, lon, color, title):
-    #     f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
-    #             (lat, lon))
-    #     f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
-    #             (self.coloricon % color))
-    #     f.write('\t\tvar marker = new google.maps.Marker({\n')
-    #     f.write('\t\ttitle: "%s",\n' % title)
-    #     f.write('\t\ticon: img,\n')
-    #     f.write('\t\tposition: latlng\n')
-    #     f.write('\t\t});\n')
-    #     f.write('\t\tmarker.setMap(map);\n')
-    #     f.write('\n')
-
-    def write_point(self, f, lat, lon, settings):
-        # strokeColor = settings.get('color') or settings.get('edge_color')
-        # fillColor = settings.get('face_color')
-        # fillOpacity = settings.get('face_alpha')
-        icon = settings.get('icon')
-        _marker = MARKER.format(lat=lat, lon=lon, icon=icon, title='not implemented')
-        print "writing point with marker",_marker
-        f.write(_marker)
+    def write_point(self, f, lat, lon, color, title):
+        f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
+                (lat, lon))
+        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
+                (self.coloricon % color))
+        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\ttitle: "%s",\n' % title)
+        f.write('\t\ticon: img,\n')
+        f.write('\t\tposition: latlng\n')
+        f.write('\t\t});\n')
+        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\n')
 
     def write_circle(self, f, lat, lon, radius, settings):
         strokeColor = settings.get('color') or settings.get('edge_color')
