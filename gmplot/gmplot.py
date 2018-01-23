@@ -5,7 +5,7 @@ import os
 
 from collections import namedtuple
 
-from .color_dicts import mpl_color_map, html_color_codes
+from color_dicts import mpl_color_map, html_color_codes
 from google_maps_templates import SYMBOLS, CIRCLE
 
 
@@ -440,7 +440,7 @@ if __name__ == "__main__":
     mymap.heatmap(path4[0], path4[1], threshold=10, radius=40)
     mymap.heatmap(path3[0], path3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
     mymap.scatter(path4[0], path4[1], c='r', marker=True)
-    mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.1)
+    mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.9, symbol='x', c='red', edge_width=4)
     # Get more points with:
     # http://www.findlatitudeandlongitude.com/click-lat-lng-list/
     scatter_path = ([37.424435, 37.424417, 37.424417, 37.424554, 37.424775, 37.425099, 37.425235, 37.425082, 37.424656, 37.423957, 37.422952, 37.421759, 37.420447, 37.419135, 37.417822, 37.417209],
