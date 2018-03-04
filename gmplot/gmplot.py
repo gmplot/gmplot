@@ -1,7 +1,9 @@
-import math
-import requests
 import json
+import math
 import os
+import requests
+
+from StringIO import StringIO
 
 from .color_dicts import mpl_color_map, html_color_codes
 
@@ -172,17 +174,24 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
-    # create the html file which include one google map and all points and
-    # paths
-    def draw(self, htmlfile):
-        f = open(htmlfile, 'w')
+    def draw(self, htmlfile=None):
+        """Create the html file which include one google map and all points and paths. If 
+        no string is provided, return the raw html. NOTE: This feature may disappear in
+        a future version because it creates two very different APIs with a single param.
+        Recommended method is to use temporary files until a real motivation appears.
+        """
+        if htmlfile is None:
+            f = StringIO()
+        else:
+            f = open(htmlfile, 'w')
+
         f.write('<html>\n')
         f.write('<head>\n')
         f.write(
             '<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />\n')
         f.write(
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
-        f.write('<title>Google Maps - pygmaps </title>\n')
+        f.write('<title>Google Maps - gmplot </title>\n')
         if self.apikey:
             f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false&key=%s"></script>\n' % self.apikey )
         else:
@@ -204,7 +213,13 @@ class GoogleMapPlotter(object):
             '\t<div id="map_canvas" style="width: 100%; height: 100%;"></div>\n')
         f.write('</body>\n')
         f.write('</html>\n')
-        f.close()
+
+        if htmlfile is None:
+            content = f.getvalue()
+            f.close()
+            return content
+        else:
+            f.close()
 
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
