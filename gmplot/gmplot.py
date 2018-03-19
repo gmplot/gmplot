@@ -169,9 +169,26 @@ class GoogleMapPlotter(object):
         return settings_string
 
     def groundoverlay(self, url, bounds_dict):
-        """
 
-        """
+        '''
+
+        :param url: Url of image to overlay
+        :param bounds_dict: dict of the form  {'north': , 'south': , 'west': , 'east': }
+        setting the image container
+        :return:
+
+        Example use:
+        import gmplot
+        gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
+        bounds_dict = {'north':37.832285, 'south': 37.637336, 'west': -122.520364, 'east': -122.346922}
+        gmap.groundoverlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds_dict)
+        gmap.draw("my_map.html")
+
+        Google Maps API documentation
+        https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
+
+        '''
+
 
         bounds_string = self._process_groundoverlay_image_bounds(bounds_dict)
 
