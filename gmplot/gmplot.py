@@ -26,6 +26,7 @@ class GoogleMapPlotter(object):
         self.shapes = []
         self.points = []
         self.heatmap_points = []
+        self.groundoverlays = []
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
@@ -167,6 +168,25 @@ class GoogleMapPlotter(object):
 
         return settings_string
 
+    def groundoverlay(self, url, bounds_dict):
+        """
+
+        """
+
+        bounds_string = self._process_groundoverlay_image_bounds(bounds_dict)
+
+        self.groundoverlays.append((url, bounds_string))
+
+    def _process_groundoverlay_image_bounds(self, bounds_dict):
+
+        bounds_string = 'var imageBounds = {'
+        bounds_string += "north:  %.4f,\n" % bounds_dict['north']
+        bounds_string += "south:  %.4f,\n" % bounds_dict['south']
+        bounds_string += "east:  %.4f,\n" % bounds_dict['east']
+        bounds_string += "west:  %.4f};\n" % bounds_dict['west']
+
+        return bounds_string
+
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         color = color or c
         kwargs.setdefault("color", color)
@@ -204,6 +224,7 @@ class GoogleMapPlotter(object):
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_groundoverlay(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -380,6 +401,17 @@ class GoogleMapPlotter(object):
             f.write('});' + '\n')
             f.write('heatmap.setMap(map);' + '\n')
             f.write(settings_string)
+
+    def write_groundoverlay(self, f):
+
+        for url, bounds_string in self.groundoverlays:
+            f.write(bounds_string)
+            f.write('var groundOverlay;' + '\n')
+            f.write('groundOverlay = new google.maps.GroundOverlay(' + '\n')
+            f.write('\n')
+            f.write("'" + url + "'," + '\n')
+            f.write('imageBounds);' + '\n')
+            f.write('groundOverlay.setMap(map);' + '\n')
 
 if __name__ == "__main__":
 
