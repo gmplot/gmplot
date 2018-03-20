@@ -2,6 +2,7 @@ import json
 import math
 import os
 import requests
+import warnings
 
 from .color_dicts import mpl_color_map, html_color_codes
 
@@ -120,7 +121,7 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=None, dissipating=True):
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True):
         """
         :param lats: list of latitudes
         :param lngs: list of longitudes
@@ -130,6 +131,9 @@ class GoogleMapPlotter(object):
         :return:
         """
         settings = {}
+        # Try to give anyone using threshold a heads up.
+        if threshold != 10:
+            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of maxIntensity.")
         settings['threshold'] = threshold
         settings['radius'] = radius
         settings['gradient'] = gradient
