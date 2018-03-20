@@ -3,8 +3,6 @@ import math
 import os
 import requests
 
-from StringIO import StringIO
-
 from .color_dicts import mpl_color_map, html_color_codes
 
 
@@ -211,17 +209,11 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
-    def draw(self, htmlfile=None):
+    def draw(self, htmlfile):
         """Create the html file which include one google map and all points and paths. If 
-        no string is provided, return the raw html. NOTE: This feature may disappear in
-        a future version because it creates two very different APIs with a single param.
-        Recommended method is to use temporary files until a real motivation appears.
+        no string is provided, return the raw html.
         """
-        if htmlfile is None:
-            f = StringIO()
-        else:
-            f = open(htmlfile, 'w')
-
+        f = open(htmlfile, 'w')
         f.write('<html>\n')
         f.write('<head>\n')
         f.write(
@@ -251,13 +243,7 @@ class GoogleMapPlotter(object):
             '\t<div id="map_canvas" style="width: 100%; height: 100%;"></div>\n')
         f.write('</body>\n')
         f.write('</html>\n')
-
-        if htmlfile is None:
-            content = f.getvalue()
-            f.close()
-            return content
-        else:
-            f.close()
+        f.close()
 
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
