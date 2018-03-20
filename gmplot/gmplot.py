@@ -145,7 +145,7 @@ class GoogleMapPlotter(object):
 
     def _process_heatmap_kwargs(self, settings_dict):
         settings_string = ''
-        settings_string += "heatmap.set('threshold', %d);\n" % settings_dict['threshold']
+        settings_string += "heatmap.set('maxIntensity', %d);\n" % settings_dict['threshold']
         settings_string += "heatmap.set('radius', %d);\n" % settings_dict['radius']
         settings_string += "heatmap.set('maxIntensity', %d);\n" % settings_dict['maxIntensity']
         settings_string += "heatmap.set('opacity', %f);\n" % settings_dict['opacity']
