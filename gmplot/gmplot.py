@@ -25,6 +25,7 @@ class GoogleMapPlotter(object):
         self.shapes = []
         self.points = []
         self.heatmap_points = []
+        self.ground_overlays = []
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
@@ -169,6 +170,34 @@ class GoogleMapPlotter(object):
 
         return settings_string
 
+    def ground_overlay(self, url, bounds_dict):
+        '''
+        :param url: Url of image to overlay
+        :param bounds_dict: dict of the form  {'north': , 'south': , 'west': , 'east': }
+        setting the image container
+        :return: None
+        Example use:
+        import gmplot
+        gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
+        bounds_dict = {'north':37.832285, 'south': 37.637336, 'west': -122.520364, 'east': -122.346922}
+        gmap.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds_dict)
+        gmap.draw("my_map.html")
+        Google Maps API documentation
+        https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
+        '''
+
+        bounds_string = self._process_ground_overlay_image_bounds(bounds_dict)
+        self.ground_overlays.append((url, bounds_string))
+
+    def _process_ground_overlay_image_bounds(self, bounds_dict):
+        bounds_string = 'var imageBounds = {'
+        bounds_string += "north:  %.4f,\n" % bounds_dict['north']
+        bounds_string += "south:  %.4f,\n" % bounds_dict['south']
+        bounds_string += "east:  %.4f,\n" % bounds_dict['east']
+        bounds_string += "west:  %.4f};\n" % bounds_dict['west']
+
+        return bounds_string
+
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         color = color or c
         kwargs.setdefault("color", color)
@@ -200,6 +229,7 @@ class GoogleMapPlotter(object):
         self.write_paths(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_ground_overlay(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -370,6 +400,17 @@ class GoogleMapPlotter(object):
             f.write('});' + '\n')
             f.write('heatmap.setMap(map);' + '\n')
             f.write(settings_string)
+
+    def write_ground_overlay(self, f):
+
+        for url, bounds_string in self.ground_overlays:
+            f.write(bounds_string)
+            f.write('var groundOverlay;' + '\n')
+            f.write('groundOverlay = new google.maps.GroundOverlay(' + '\n')
+            f.write('\n')
+            f.write("'" + url + "'," + '\n')
+            f.write('imageBounds);' + '\n')
+            f.write('groundOverlay.setMap(map);' + '\n')
 
 if __name__ == "__main__":
 
