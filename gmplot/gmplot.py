@@ -4,7 +4,17 @@ import os
 import requests
 import warnings
 
-from .color_dicts import mpl_color_map, html_color_codes
+from collections import namedtuple
+
+from color_dicts import mpl_color_map, html_color_codes
+from google_maps_templates import SYMBOLS, CIRCLE
+
+
+Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
+
+
+class InvalidSymbolError(Exception):
+    pass
 
 
 def safe_iter(var):
@@ -24,6 +34,8 @@ class GoogleMapPlotter(object):
         self.paths = []
         self.shapes = []
         self.points = []
+        self.circles = []
+        self.symbols = []
         self.heatmap_points = []
         self.ground_overlays = []
         self.radpoints = []
@@ -55,7 +67,7 @@ class GoogleMapPlotter(object):
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:], title))
 
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, **kwargs):
+    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
         size = size or s or 40
         kwargs["color"] = color
@@ -65,7 +77,15 @@ class GoogleMapPlotter(object):
             if marker:
                 self.marker(lat, lng, settings['color'])
             else:
-                self.circle(lat, lng, size, **settings)
+                self._add_symbol(Symbol(symbol, lat, lng, size), **settings)
+
+    def _add_symbol(self, symbol, color=None, c=None, **kwargs):
+        color = color or c
+        kwargs.setdefault('face_alpha', 0.5)
+        kwargs.setdefault('face_color', "#000000")
+        kwargs.setdefault("color", color)
+        settings = self._process_kwargs(kwargs)
+        self.symbols.append((symbol, settings))
 
     def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
         color = color or c
@@ -73,8 +93,7 @@ class GoogleMapPlotter(object):
         kwargs.setdefault('face_color', "#000000")
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
-        path = self.get_cycle(lat, lng, radius)
-        self.shapes.append((path, settings))
+        self.circles.append(((lat, lng, radius), settings))
 
     def _process_kwargs(self, kwargs):
         settings = dict()
@@ -112,7 +131,6 @@ class GoogleMapPlotter(object):
                 settings[key] = color
 
         settings["closed"] = kwargs.get("closed", None)
-
         return settings
 
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
@@ -227,6 +245,8 @@ class GoogleMapPlotter(object):
         self.write_grids(f)
         self.write_points(f)
         self.write_paths(f)
+        self.write_circles(f)
+        self.write_symbols(f)
         self.write_shapes(f)
         self.write_heatmap(f)
         self.write_ground_overlay(f)
@@ -276,24 +296,13 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2], point[3])
 
-    def get_cycle(self, lat, lng, rad):
-        # unit of radius: meter
-        cycle = []
-        d = (rad / 1000.0) / 6378.8
-        lat1 = (math.pi / 180.0) * lat
-        lng1 = (math.pi / 180.0) * lng
+    def write_circles(self, f):
+        for circle, settings in self.circles:
+            self.write_circle(f, circle[0], circle[1], circle[2], settings)
 
-        r = [x * 10 for x in range(36)]
-        for a in r:
-            tc = (math.pi / 180.0) * a
-            y = math.asin(
-                math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(tc))
-            dlng = math.atan2(math.sin(
-                tc) * math.sin(d) * math.cos(lat1), math.cos(d) - math.sin(lat1) * math.sin(y))
-            x = ((lng1 - dlng + math.pi) % (2.0 * math.pi)) - math.pi
-            cycle.append(
-                (float(y * (180.0 / math.pi)), float(x * (180.0 / math.pi))))
-        return cycle
+    def write_symbols(self, f):
+        for symbol, settings in self.symbols:
+            self.write_symbol(f, symbol, settings)
 
     def write_paths(self, f):
         for path, settings in self.paths:
@@ -328,6 +337,31 @@ class GoogleMapPlotter(object):
         f.write('\t\t});\n')
         f.write('\t\tmarker.setMap(map);\n')
         f.write('\n')
+
+    def write_symbol(self, f, symbol, settings):
+        strokeColor = settings.get('color') or settings.get('edge_color')
+        strokeOpacity = settings.get('edge_alpha')
+        strokeWeight = settings.get('edge_width')
+        fillColor = settings.get('face_color')
+        fillOpacity = settings.get('face_alpha')
+        try:
+            template = SYMBOLS[symbol.symbol]
+        except KeyError:
+            raise InvalidSymbolError("Symbol %s is not implemented" % symbol.symbol)
+
+        f.write(template.format(lat=symbol.lat, long=symbol.long, size=symbol.size, strokeColor=strokeColor,
+                                strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
+                                fillColor=fillColor, fillOpacity=fillOpacity))
+
+    def write_circle(self, f, lat, long, size, settings):
+        strokeColor = settings.get('color') or settings.get('edge_color')
+        strokeOpacity = settings.get('edge_alpha')
+        strokeWeight = settings.get('edge_width')
+        fillColor = settings.get('face_color')
+        fillOpacity = settings.get('face_alpha')
+        f.write(CIRCLE.format(lat=lat, long=long, size=size, strokeColor=strokeColor,
+                              strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
+                              fillColor=fillColor, fillOpacity=fillOpacity))
 
     def write_polyline(self, f, path, settings):
         clickable = False
@@ -436,7 +470,7 @@ if __name__ == "__main__":
     mymap.heatmap(path4[0], path4[1], threshold=10, radius=40)
     mymap.heatmap(path3[0], path3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
     mymap.scatter(path4[0], path4[1], c='r', marker=True)
-    mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.1)
+    mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.9, symbol='x', c='red', edge_width=4)
     # Get more points with:
     # http://www.findlatitudeandlongitude.com/click-lat-lng-list/
     scatter_path = ([37.424435, 37.424417, 37.424417, 37.424554, 37.424775, 37.425099, 37.425235, 37.425082, 37.424656, 37.423957, 37.422952, 37.421759, 37.420447, 37.419135, 37.417822, 37.417209],
