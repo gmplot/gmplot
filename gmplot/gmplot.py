@@ -75,9 +75,9 @@ class GoogleMapPlotter(object):
             if marker:
                 self.marker(lat, lng, settings['color'])
             else:
-                self.add_symbol(Symbol(symbol, lat, lng, size), **settings)
+                self._add_symbol(Symbol(symbol, lat, lng, size), **settings)
 
-    def add_symbol(self, symbol, color=None, c=None, **kwargs):
+    def _add_symbol(self, symbol, color=None, c=None, **kwargs):
         color = color or c
         kwargs.setdefault('face_alpha', 0.5)
         kwargs.setdefault('face_color', "#000000")
@@ -265,25 +265,6 @@ class GoogleMapPlotter(object):
     def write_symbols(self, f):
         for symbol, settings in self.symbols:
             self.write_symbol(f, symbol, settings)
-
-    def get_cycle(self, lat, lng, rad):
-        # unit of radius: meter
-        cycle = []
-        d = (rad / 1000.0) / 6378.8
-        lat1 = (math.pi / 180.0) * lat
-        lng1 = (math.pi / 180.0) * lng
-
-        r = [x * 10 for x in range(36)]
-        for a in r:
-            tc = (math.pi / 180.0) * a
-            y = math.asin(
-                math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(tc))
-            dlng = math.atan2(math.sin(
-                tc) * math.sin(d) * math.cos(lat1), math.cos(d) - math.sin(lat1) * math.sin(y))
-            x = ((lng1 - dlng + math.pi) % (2.0 * math.pi)) - math.pi
-            cycle.append(
-                (float(y * (180.0 / math.pi)), float(x * (180.0 / math.pi))))
-        return cycle
 
     def write_paths(self, f):
         for path, settings in self.paths:
