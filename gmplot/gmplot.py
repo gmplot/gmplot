@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import json
 import math
 import os
@@ -6,8 +8,8 @@ import warnings
 
 from collections import namedtuple
 
-from color_dicts import mpl_color_map, html_color_codes
-from google_maps_templates import SYMBOLS, CIRCLE
+from gmplot.color_dicts import mpl_color_map, html_color_codes
+from gmplot.google_maps_templates import SYMBOLS, CIRCLE
 
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
