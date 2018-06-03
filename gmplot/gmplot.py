@@ -42,7 +42,7 @@ class GoogleMapPlotter(object):
         self.ground_overlays = []
         self.radpoints = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.coloricon = 'http://www.googlemapsmarkers.com/v1/%s'
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
 
