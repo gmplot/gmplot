@@ -131,6 +131,10 @@ class GoogleMapPlotter(object):
                             settings["edge_color"] or \
                             settings["face_color"]
 
+        settings["precision"] = kwargs.get("precision", None) or \
+                            kwargs.get("p", None) or \
+                            6
+
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
             if 'color' in key:
@@ -378,11 +382,12 @@ class GoogleMapPlotter(object):
         strokeColor = settings.get('color') or settings.get('edge_color')
         strokeOpacity = settings.get('edge_alpha')
         strokeWeight = settings.get('edge_width')
+        precision = settings.get("precision")
 
         f.write('var PolylineCoordinates = [\n')
         for coordinate in path:
-            f.write('new google.maps.LatLng(%f, %f),\n' %
-                    (coordinate[0], coordinate[1]))
+            f.write('new google.maps.LatLng(%.*f, %.*f),\n' %
+                    (precision, coordinate[0], precision, coordinate[1]))
         f.write('];\n')
         f.write('\n')
 
@@ -406,10 +411,12 @@ class GoogleMapPlotter(object):
         strokeWeight = settings.get('edge_width')
         fillColor = settings.get('face_color') or settings.get('color')
         fillOpacity= settings.get('face_alpha')
+        precision = settings.get("precision")
+
         f.write('var coords = [\n')
         for coordinate in path:
-            f.write('new google.maps.LatLng(%f, %f),\n' %
-                    (coordinate[0], coordinate[1]))
+            f.write('new google.maps.LatLng(%.*f, %.*f),\n' %
+                    (precision, coordinate[0], precision, coordinate[1]))
         f.write('];\n')
         f.write('\n')
 
