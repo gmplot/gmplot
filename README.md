@@ -1,6 +1,8 @@
 gmplot
 ======
 
+[![Gitter](https://badges.gitter.im/gmplot/community.svg)](https://gitter.im/gmplot/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 Plotting data on Google Maps, the easy way. A matplotlib-like
 interface to generate the HTML and javascript to render all the
 data you'd like on top of Google Maps. Several plotting methods
