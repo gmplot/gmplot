@@ -6,7 +6,7 @@ interface to generate the HTML and javascript to render all the
 data you'd like on top of Google Maps. Several plotting methods
 make creating exploratory map views effortless. Here's a crash course:
 
-::
+.. code:: python
 
     from gmplot import gmplot
 
