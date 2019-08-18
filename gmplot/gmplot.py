@@ -196,11 +196,12 @@ class GoogleMapPlotter(object):
 
         return settings_string
 
-    def ground_overlay(self, url, bounds_dict):
+    def ground_overlay(self, url, bounds_dict, opacity=1.0):
         '''
         :param url: Url of image to overlay
         :param bounds_dict: dict of the form  {'north': , 'south': , 'west': , 'east': }
         setting the image container
+        :param opacity: The opacity of the overlay, expressed as a number between 0 and 1. Optional. Defaults to 1.
         :return: None
         Example use:
         import gmplot
@@ -213,7 +214,7 @@ class GoogleMapPlotter(object):
         '''
 
         bounds_string = self._process_ground_overlay_image_bounds(bounds_dict)
-        self.ground_overlays.append((url, bounds_string))
+        self.ground_overlays.append((url, bounds_string, opacity))
 
     def _process_ground_overlay_image_bounds(self, bounds_dict):
         bounds_string = 'var imageBounds = {'
@@ -445,13 +446,13 @@ class GoogleMapPlotter(object):
 
     def write_ground_overlay(self, f):
 
-        for url, bounds_string in self.ground_overlays:
+        for url, bounds_string, opacity in self.ground_overlays:
             f.write(bounds_string)
             f.write('var groundOverlay;' + '\n')
             f.write('groundOverlay = new google.maps.GroundOverlay(' + '\n')
             f.write('\n')
             f.write("'" + url + "'," + '\n')
-            f.write('imageBounds);' + '\n')
+            f.write('imageBounds, {opacity: %f});' %opacity + '\n')
             f.write('groundOverlay.setMap(map);' + '\n')
 
 if __name__ == "__main__":
