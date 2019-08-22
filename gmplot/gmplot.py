@@ -243,9 +243,9 @@ class GoogleMapPlotter(object):
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
         f.write('<title>Google Maps - gmplot </title>\n')
         if self.apikey:
-            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false&key=%s"></script>\n' % self.apikey )
+            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&key=%s"></script>\n' % self.apikey )
         else:
-            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>\n' )
+            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization"></script>\n' )
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
         self.write_map(f)
