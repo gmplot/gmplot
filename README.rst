@@ -11,7 +11,7 @@ make creating exploratory map views effortless. Here's a crash course:
     from gmplot import gmplot
     
     # Add Google API Key
-    gmap3.apikey = "Enter_API_Key_Here"
+    gmap.apikey = "Enter_API_Key_Here"
     
     # Place map
     gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
