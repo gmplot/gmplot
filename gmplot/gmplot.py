@@ -46,7 +46,6 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        self.coloricon_cache = set()
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
         self.title = 'Google Maps - gmplot'
@@ -277,8 +276,9 @@ class GoogleMapPlotter(object):
             self.write_polyline(f, line, settings)
 
     def write_points(self, f):
+        color_cache = set()
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3], point[4])
+            self.write_point(f, point[0], point[1], point[2], point[3], point[4], color_cache)
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -305,16 +305,16 @@ class GoogleMapPlotter(object):
         f.write('\t\t});\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title, precision):
+    def write_point(self, f, lat, lon, color, title, precision, color_cache):
         marker_name = 'marker_%s' % color
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
-        if color not in self.coloricon_cache:
+        if color not in color_cache:
             base64_icon = base64.b64encode(open(self.coloricon % color, 'rb').read()).decode()
             f.write('\t\tvar %s = new google.maps.MarkerImage(\'data:image/png;base64,%s\');\n' %
                 (marker_name, base64_icon))
             f.write('\n')
-            self.coloricon_cache.add(color)
+            color_cache.add(color)
 
         f.write('\t\tnew google.maps.Marker({\n')
         if title is not None:
