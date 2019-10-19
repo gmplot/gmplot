@@ -1,7 +1,7 @@
 EARTH_RADIUS = 6378.8  # in KM
 
 
-CIRCLE = """
+CIRCLE_MARKER = """
 var center = new google.maps.LatLng({lat}, {long});
 var radius = {size};
 var circle = new google.maps.Circle({{
@@ -19,8 +19,8 @@ circle.setMap(map);
 
 """
 
-# FIXME: This generate a Xmark in cartesian frame rather than in lat/long.
-XMARK = """
+# FIXME: This generates an X marker in Cartesian frame rather than in lat/long.
+X_MARKER = """
 
 var lat = {lat};
 var long = {long};
@@ -57,8 +57,8 @@ linePath.setMap(map);
 """ % EARTH_RADIUS
 
 
-# FIXME: This generate a Xmark in cartesian frame rather than in lat/long.
-CROSS = """
+# FIXME: This generates a plus marker in Cartesian frame rather than in lat/long.
+PLUS_MARKER = """
 
 var lat = {lat};
 var long = {long};
@@ -96,7 +96,7 @@ linePath.setMap(map);
 
 
 
-SYMBOLS = {'o': CIRCLE,
-           'x': XMARK,
-           '+': CROSS,
+SYMBOLS = {'o': CIRCLE_MARKER,
+           'x': X_MARKER,
+           '+': PLUS_MARKER,
 }
