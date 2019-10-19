@@ -5,6 +5,7 @@ import math
 import os
 import requests
 import warnings
+import base64
 
 from collections import namedtuple
 
@@ -45,6 +46,7 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.coloricon_cache = set()
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
         self.title = 'Google Maps - gmplot'
@@ -304,10 +306,20 @@ class GoogleMapPlotter(object):
         f.write('\n')
 
     def write_point(self, f, lat, lon, color, title, precision):
+        marker_name = 'marker_%s' % color
+
+        # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
+        if color not in self.coloricon_cache:
+            base64_icon = base64.b64encode(open(self.coloricon % color, 'rb').read()).decode()
+            f.write('\t\tvar %s = new google.maps.MarkerImage(\'data:image/png;base64,%s\');\n' %
+                (marker_name, base64_icon))
+            f.write('\n')
+            self.coloricon_cache.add(color)
+
         f.write('\t\tnew google.maps.Marker({\n')
         if title is not None:
             f.write('\t\t\ttitle: "%s",\n' % title)
-        f.write('\t\t\ticon: new google.maps.MarkerImage("%s"),\n' % (self.coloricon % color))
+        f.write('\t\t\ticon: %s,\n' % marker_name)
         f.write('\t\t\tposition: %s,\n' % (_format_LatLng(lat, lon, precision)))
         f.write('\t\t\tmap: map\n')
         f.write('\t\t});\n')
