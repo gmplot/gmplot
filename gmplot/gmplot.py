@@ -9,7 +9,7 @@ import warnings
 from collections import namedtuple
 
 from gmplot.color_dicts import mpl_color_map, html_color_codes
-from gmplot.google_maps_templates import SYMBOLS, CIRCLE
+from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
@@ -361,9 +361,9 @@ class GoogleMapPlotter(object):
         strokeWeight = settings.get('edge_width')
         fillColor = settings.get('face_color')
         fillOpacity = settings.get('face_alpha')
-        f.write(CIRCLE.format(lat=lat, long=long, size=size, strokeColor=strokeColor,
-                              strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
-                              fillColor=fillColor, fillOpacity=fillOpacity))
+        f.write(CIRCLE_MARKER.format(lat=lat, long=long, size=size, strokeColor=strokeColor,
+                                     strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
+                                     fillColor=fillColor, fillOpacity=fillOpacity))
 
     def write_polyline(self, f, path, settings):
         clickable = False
