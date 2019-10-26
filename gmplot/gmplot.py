@@ -28,9 +28,10 @@ def safe_iter(var):
 
 class GoogleMapPlotter(object):
 
-    def __init__(self, center_lat, center_lng, zoom, apikey=''):
+    def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
+        self.map_type = str(map_type)
         self.apikey = str(apikey)
         self.grids = None
         self.paths = []
@@ -314,14 +315,14 @@ class GoogleMapPlotter(object):
         for shape, settings in self.shapes:
             self.write_polygon(f, shape, settings)
 
-    # TODO: Add support for mapTypeId: google.maps.MapTypeId.SATELLITE
     def write_map(self,  f):
         f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
                 (self.center[0], self.center[1]))
         f.write('\t\tvar myOptions = {\n')
+        if self.map_type:
+            f.write('\t\t\tmapTypeId: \'%s\',\n' % self.map_type.lower())
         f.write('\t\t\tzoom: %d,\n' % (self.zoom))
-        f.write('\t\t\tcenter: centerlatlng,\n')
-        f.write('\t\t\tmapTypeId: google.maps.MapTypeId.ROADMAP\n')
+        f.write('\t\t\tcenter: centerlatlng\n')
         f.write('\t\t};\n')
         f.write(
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')

@@ -72,6 +72,17 @@ Plot types
 
 .. image:: http://i.imgur.com/dTNkbZ7.png
 
+Map types
+---------
+
+Passing in one of the supported `map types
+<https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes>`_
+for the optional ``map_type`` parameter allows you to change the look of your map:
+
+::
+
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_type='satellite')
+
 Misc.
 -----
 
