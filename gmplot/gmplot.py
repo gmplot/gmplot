@@ -28,6 +28,8 @@ def safe_iter(var):
 
 class GoogleMapPlotter(object):
 
+    numMarkers = 0
+
     def __init__(self, center_lat, center_lng, zoom, apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
@@ -62,12 +64,12 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation", info_window_html=""):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        self.points.append((lat, lng, color[1:], title, info_window_html))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -296,7 +298,7 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_point(f, point[0], point[1], point[2], point[3], point[4])
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -325,20 +327,32 @@ class GoogleMapPlotter(object):
         f.write('\t\t};\n')
         f.write(
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
+        f.write('\t\tvar markers = [];\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_point(self, f, lat, lon, color, title, info_window_html=""):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
-        f.write('\t\ttitle: "%s",\n' % title)
-        f.write('\t\ticon: img,\n')
-        f.write('\t\tposition: latlng\n')
-        f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\t\tmarkers.push(new google.maps.Marker({\n')
+        f.write('\t\t\ttitle: "%s",\n' % title)
+        f.write('\t\t\ticon: img,\n')
+        f.write('\t\t\tposition: latlng\n')
+        f.write('\t\t}));\n')
+        if info_window_html != "":
+            f.write("\t\tgoogle.maps.event.addListener(markers[%d], 'click', function () {\n" % self.numMarkers)
+            f.write("\t\t\tinfo_window = new google.maps.InfoWindow({\n")
+            # Escape every single quote and every newline in info_window_html.
+            info_window_html = info_window_html.replace("'", "\\'").replace("\n", "\\n")
+            print("info_window_html transformed to ", info_window_html)
+            f.write("\t\t\t\tcontent: '%s',\n" % info_window_html)
+            f.write("\t\t\t});\n")
+            f.write("\t\t\tinfo_window.open(map, markers[%d]);\n" % self.numMarkers)
+            f.write("\t\t});\n")
+        f.write('\t\tmarkers[%d].setMap(map);\n' % self.numMarkers)
         f.write('\n')
+        self.numMarkers += 1
 
     def write_symbol(self, f, symbol, settings):
         strokeColor = settings.get('color') or settings.get('edge_color')
@@ -458,7 +472,7 @@ if __name__ == "__main__":
     mymap.marker(37.428, -122.146, "cornflowerblue")
     mymap.marker(37.429, -122.144, "k")
     lat, lng = mymap.geocode("Stanford University")
-    mymap.marker(lat, lng, "red")
+    mymap.marker(lat, lng, "red", "<a href='https://www.calvin.edu'>Go to Calvin University</a>")
     mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
