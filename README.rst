@@ -72,6 +72,14 @@ Plot types
 
 .. image:: http://i.imgur.com/dTNkbZ7.png
 
+font-awesome
+------------
+For font-awesome icon support: https://mapmarker.io/documentation
+
+Pin and Icon are using ``version 5``.
+
+Icon Stack is using ``version 4``.
+
 Misc.
 -----
 

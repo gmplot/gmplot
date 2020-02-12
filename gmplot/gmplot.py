@@ -35,6 +35,7 @@ class GoogleMapPlotter(object):
         self.paths = []
         self.shapes = []
         self.points = []
+        self.point_icons = []
         self.circles = []
         self.symbols = []
         self.heatmap_points = []
@@ -68,6 +69,10 @@ class GoogleMapPlotter(object):
         color = self.html_color_codes.get(color, color)
         self.points.append((lat, lng, color[1:], title))
 
+    def marker_icon(self, lat, lng, icon, title="no implementation"):
+        if icon:
+            self.point_icons.append((lat, lng, icon, title))
+
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
         size = size or s or 40
@@ -89,6 +94,9 @@ class GoogleMapPlotter(object):
         self.symbols.append((symbol, settings))
 
     def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
+        """
+        :param radius: in meter
+        """
         color = color or c
         kwargs.setdefault('face_alpha', 0.5)
         kwargs.setdefault('face_color', "#000000")
@@ -225,6 +233,27 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
+    @staticmethod
+    def get_pin_icon(background_color="DC4C3F", text="", text_color="FFF", fa_icon="", size=30, label="",
+                     label_color="", label_text_color=""):
+        return "https://cdn.mapmarker.io/api/v1/font-awesome/v5/pin?text={}&icon={}&size={}&background={}&color={}" \
+               "&label={}&labelColor={}&labelTextColor={}".format(text, fa_icon, size, background_color, text_color,
+                                                                  label, label_color, label_text_color)
+
+    @staticmethod
+    def get_icon(background_color="DC4C3F", fa_icon="fa-star-solid", size=30, label="", label_color="",
+                 label_text_color=""):
+        return "https://cdn.mapmarker.io/api/v1/font-awesome/v5/icon?icon={}&size={}&color={}" \
+               "&label={}&labelColor={}&labelTextColor={}".format(fa_icon, size, background_color, label, label_color,
+                                                                  label_text_color)
+
+    @staticmethod
+    def get_icon_stack(background_color="DC4C3F", fa_icon="fa-star-solid", size=30, on_fa_icon="fa-map-marker",
+                       on_color="DC4C3F", label="", label_color="", label_text_color=""):
+        return "https://cdn.mapmarker.io/api/v1/font-awesome/v4/icon-stack?icon={}&size={}&color={}&oncolor={}&on={}" \
+               "&label={}&labelColor={}&labelTextColor={}".format(fa_icon, size, background_color, on_color, on_fa_icon,
+                                                                  label, label_color, label_text_color)
+
     def draw(self, htmlfile):
         """Create the html file which include one google map and all points and paths. If 
         no string is provided, return the raw html.
@@ -248,6 +277,7 @@ class GoogleMapPlotter(object):
         self.write_map(f)
         self.write_grids(f)
         self.write_points(f)
+        self.write_point_icons(f)
         self.write_paths(f)
         self.write_circles(f)
         self.write_symbols(f)
@@ -300,6 +330,10 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2], point[3])
 
+    def write_point_icons(self, f):
+        for point in self.point_icons:
+            self.write_point_icon(f, point[0], point[1], point[2], point[3])
+
     def write_circles(self, f):
         for circle, settings in self.circles:
             self.write_circle(f, circle[0], circle[1], circle[2], settings)
@@ -334,6 +368,18 @@ class GoogleMapPlotter(object):
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
+        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\ttitle: "%s",\n' % title)
+        f.write('\t\ticon: img,\n')
+        f.write('\t\tposition: latlng\n')
+        f.write('\t\t});\n')
+        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\n')
+
+    def write_point_icon(self, f, lat, lon, icon, title):
+        f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
+                (lat, lon))
+        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' % icon)
         f.write('\t\tvar marker = new google.maps.Marker({\n')
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
@@ -481,9 +527,9 @@ if __name__ == "__main__":
     # Get more points with:
     # http://www.findlatitudeandlongitude.com/click-lat-lng-list/
     scatter_path = (
-    [37.424435, 37.424417, 37.424417, 37.424554, 37.424775, 37.425099, 37.425235, 37.425082, 37.424656, 37.423957,
-     37.422952, 37.421759, 37.420447, 37.419135, 37.417822, 37.417209],
-    [-122.142048, -122.141275, -122.140503, -122.139688, -122.138872, -122.138078, -122.137241, -122.136405,
-     -122.135568, -122.134731, -122.133894, -122.133057, -122.13222, -122.131383, -122.130557, -122.129999])
+        [37.424435, 37.424417, 37.424417, 37.424554, 37.424775, 37.425099, 37.425235, 37.425082, 37.424656, 37.423957,
+         37.422952, 37.421759, 37.420447, 37.419135, 37.417822, 37.417209],
+        [-122.142048, -122.141275, -122.140503, -122.139688, -122.138872, -122.138078, -122.137241, -122.136405,
+         -122.135568, -122.134731, -122.133894, -122.133057, -122.13222, -122.131383, -122.130557, -122.129999])
     mymap.scatter(scatter_path[0], scatter_path[1], c='r', marker=True)
     mymap.draw('./mymap.html')
