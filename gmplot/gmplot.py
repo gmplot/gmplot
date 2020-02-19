@@ -74,8 +74,8 @@ class GoogleMapPlotter(object):
         if icon:
             self.point_icons.append((lat, lng, icon, title))
 
-    def marker_icon_path(self, lat, lng, icon_path, title="no implementation", scale=3, rotation=0,
-                         stroke_color="black", fill_color="#FFFFFF", stroke_opacity=1, fill_opacity=0,
+    def marker_icon_path(self, lat, lng, icon_path, title="no implementation", scale=3.0, rotation=0.0,
+                         stroke_color="black", fill_color="#FFFFFF", stroke_opacity=1.0, fill_opacity=0.0,
                          stroke_weight=None):
         """
         :param lat:
@@ -550,6 +550,17 @@ if __name__ == "__main__":
     mymap.marker(37.429, -122.144, "k")
     lat, lng = mymap.geocode("Stanford University")
     mymap.marker(lat, lng, "red")
+
+    mymap.marker_icon(37.430, -122.145, mymap.get_pin_icon(), "my pin")
+    mymap.marker_icon(37.431, -122.146, mymap.get_icon(), "my icon")
+    mymap.marker_icon(37.432, -122.147, mymap.get_icon_stack(), "my icon-stack")
+
+    mymap.marker_icon_path(37.425, -122.140, "google.maps.SymbolPath.FORWARD_CLOSED_ARROW", "FORWARD_CLOSED_ARROW", 5,
+                           30, fill_opacity=1)
+    mymap.marker_icon_path(37.426, -122.141,
+                           "'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z'", "custom svg",
+                           1, fill_color="yellow", fill_opacity=0.8, stroke_color="gold", stroke_weight=14)
+
     mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
             (-122.145, -122.145, -122.145, -122.146, -122.146)]
