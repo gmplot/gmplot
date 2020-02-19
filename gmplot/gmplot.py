@@ -36,6 +36,7 @@ class GoogleMapPlotter(object):
         self.shapes = []
         self.points = []
         self.point_icons = []
+        self.point_icon_paths = []
         self.circles = []
         self.symbols = []
         self.heatmap_points = []
@@ -72,6 +73,28 @@ class GoogleMapPlotter(object):
     def marker_icon(self, lat, lng, icon, title="no implementation"):
         if icon:
             self.point_icons.append((lat, lng, icon, title))
+
+    def marker_icon_path(self, lat, lng, icon_path, title="no implementation", scale=3, rotation=0,
+                         stroke_color="black", fill_color="#FFFFFF", stroke_opacity=1, fill_opacity=0,
+                         stroke_weight=None):
+        """
+        :param lat:
+        :param lng:
+        :param icon_path: google.maps.SymbolPath.* or SVG path notation("'M ...'")
+        :param title:
+        :param scale:
+        :param rotation:
+        :param stroke_color:
+        :param fill_color:
+        :param stroke_opacity:
+        :param fill_opacity:
+        :param stroke_weight: default is the scale of the symbol
+        :return:
+        """
+        stroke_weight = stroke_weight if stroke_weight else scale
+        if icon_path:
+            self.point_icon_paths.append((lat, lng, icon_path, title, scale, rotation, stroke_color, fill_color,
+                                          stroke_opacity, fill_opacity, stroke_weight))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -278,6 +301,7 @@ class GoogleMapPlotter(object):
         self.write_grids(f)
         self.write_points(f)
         self.write_point_icons(f)
+        self.write_point_icon_paths(f)
         self.write_paths(f)
         self.write_circles(f)
         self.write_symbols(f)
@@ -334,6 +358,11 @@ class GoogleMapPlotter(object):
         for point in self.point_icons:
             self.write_point_icon(f, point[0], point[1], point[2], point[3])
 
+    def write_point_icon_paths(self, f):
+        for point in self.point_icon_paths:
+            self.write_point_icon_path(f, point[0], point[1], point[2], point[3], point[4], point[5], point[6],
+                                       point[7], point[8], point[9], point[10])
+
     def write_circles(self, f):
         for circle, settings in self.circles:
             self.write_circle(f, circle[0], circle[1], circle[2], settings)
@@ -383,6 +412,20 @@ class GoogleMapPlotter(object):
         f.write('\t\tvar marker = new google.maps.Marker({\n')
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
+        f.write('\t\tposition: latlng\n')
+        f.write('\t\t});\n')
+        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\n')
+
+    def write_point_icon_path(self, f, lat, lon, icon_path, title, scale, rotation, stroke_color, fill_color,
+                              stroke_opacity, fill_opacity, stroke_weight):
+        f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
+                (lat, lon))
+        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\ttitle: "%s",\n' % title)
+        f.write('\t\ticon: {path: %s, scale: %f, rotation: %f, strokeColor: "%s", fillColor: "%s", strokeOpacity: %f, '
+                ' fillOpacity: %f, strokeWeight: %f},\n'
+                % (icon_path, scale, rotation, stroke_color, fill_color, stroke_opacity, fill_opacity, stroke_weight))
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
         f.write('\t\tmarker.setMap(map);\n')
