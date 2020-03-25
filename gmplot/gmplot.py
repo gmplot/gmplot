@@ -54,7 +54,7 @@ class GoogleMapPlotter(object):
     @classmethod
     def geocode(self, location_string, apikey):
         geocode = requests.get(
-            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&&%s' % (location_string, apikey))
+            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&&key=%s' % (location_string, apikey))
         geocode = json.loads(geocode.text)
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
