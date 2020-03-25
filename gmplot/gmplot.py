@@ -47,14 +47,14 @@ class GoogleMapPlotter(object):
         self.html_color_codes = html_color_codes
 
     @classmethod
-    def from_geocode(cls, location_string, zoom=13):
-        lat, lng = cls.geocode(location_string)
+    def from_geocode(cls, location_string, apikey, zoom=13):
+        lat, lng = cls.geocode(location_string, apikey)
         return cls(lat, lng, zoom)
 
     @classmethod
-    def geocode(self, location_string):
+    def geocode(self, location_string, apikey):
         geocode = requests.get(
-            'http://maps.googleapis.com/maps/api/geocode/json?address="%s"' % location_string)
+            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&&%s' % (location_string, apikey))
         geocode = json.loads(geocode.text)
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
@@ -451,7 +451,7 @@ class GoogleMapPlotter(object):
 if __name__ == "__main__":
 
     mymap = GoogleMapPlotter(37.428, -122.145, 16)
-    # mymap = GoogleMapPlotter.from_geocode("Stanford University")
+    # mymap = GoogleMapPlotter.from_geocode("Stanford University", mymap.apikey)
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
     mymap.marker(37.427, -122.145, "yellow")
