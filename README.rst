@@ -55,11 +55,12 @@ Geocoding
 ``gmplot`` contains a simple wrapper around Google's geocoding service enabling
 map initilization to the location of your choice. Rather than providing latitude,
 longitude, and zoom level during initialization, grab your gmplot instance with
-a location:
+a location and a valid Google Maps API key:
 
 ::
 
-    gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco")
+    apikey = '' # (your API key goes here)
+    gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco", apikey)
 
 Plot types
 ----------

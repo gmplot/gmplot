@@ -18,6 +18,8 @@ Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
 class InvalidSymbolError(Exception):
     pass
 
+class GoogleAPIError(Exception):
+    pass
 
 def safe_iter(var):
     try:
@@ -47,15 +49,18 @@ class GoogleMapPlotter(object):
         self.html_color_codes = html_color_codes
 
     @classmethod
-    def from_geocode(cls, location_string, zoom=13):
-        lat, lng = cls.geocode(location_string)
-        return cls(lat, lng, zoom)
+    def from_geocode(cls, location_string, zoom=13, apikey=''):
+        lat, lng = cls.geocode(location_string, apikey)
+        return cls(lat, lng, zoom, apikey)
 
     @classmethod
-    def geocode(self, location_string):
+    def geocode(self, location_string, apikey=''):
         geocode = requests.get(
-            'http://maps.googleapis.com/maps/api/geocode/json?address="%s"' % location_string)
+            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location_string, apikey))
         geocode = json.loads(geocode.text)
+        if geocode.get('error_message', ''):
+            raise GoogleAPIError(geocode['error_message'])
+
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
 
@@ -449,15 +454,16 @@ class GoogleMapPlotter(object):
             f.write('groundOverlay.setMap(map);' + '\n')
 
 if __name__ == "__main__":
+    apikey=''
 
-    mymap = GoogleMapPlotter(37.428, -122.145, 16)
-    # mymap = GoogleMapPlotter.from_geocode("Stanford University")
+    mymap = GoogleMapPlotter(37.428, -122.145, 16, apikey)
+    # mymap = GoogleMapPlotter.from_geocode("Stanford University", apikey)
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
     mymap.marker(37.427, -122.145, "yellow")
     mymap.marker(37.428, -122.146, "cornflowerblue")
     mymap.marker(37.429, -122.144, "k")
-    lat, lng = mymap.geocode("Stanford University")
+    lat, lng = mymap.geocode("Stanford University", apikey)
     mymap.marker(lat, lng, "red")
     mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
