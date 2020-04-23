@@ -275,7 +275,7 @@ class GoogleMapPlotter(object):
         self.write_map(f)
         self.write_symbols(f)  # symbols have to be defined before being used
         self.write_grids(f)
-        self.write_points(f)
+        self.write_markers(f)
         self.write_paths(f)
         self.write_circles(f)
         self.write_symbols(f)
@@ -325,9 +325,9 @@ class GoogleMapPlotter(object):
             settings = self._process_kwargs({"color": "#000000"})
             self.write_polyline(f, line, settings)
 
-    def write_points(self, f):
+    def write_markers(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_marker(f, point[0], point[1], point[2], point[3])
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -358,17 +358,17 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_marker(self, f, lat, lon, color, title, name='marker'):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\tvar %s = new google.maps.Marker({\n' % name)
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\t\t%s.setMap(map);\n' % name)
         f.write('\n')
 
     def write_symbol(self, f, symbol, settings):
