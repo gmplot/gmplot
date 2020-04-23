@@ -141,6 +141,7 @@ class GoogleMapPlotter(object):
                 settings[key] = color
 
         settings["closed"] = kwargs.get("closed", None)
+        settings["icons"] = kwargs.get("icons", {})
         return settings
 
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
@@ -397,9 +398,18 @@ class GoogleMapPlotter(object):
     def write_polyline(self, f, path, settings):
         clickable = False
         geodesic = True
+        icons = ''
+        _icons = settings.get('icons', {})
         strokeColor = settings.get('color') or settings.get('edge_color')
         strokeOpacity = settings.get('edge_alpha')
         strokeWeight = settings.get('edge_width')
+        for k in _icons:
+            # icon argument must not be in quotes
+            if k == 'icon':
+                icons += '%s: %s, ' % (k, _icons[k])
+            else:
+                icons += "%s: '%s', " % (k, _icons[k])
+
 
         f.write('var PolylineCoordinates = [\n')
         for coordinate in path:
@@ -412,6 +422,7 @@ class GoogleMapPlotter(object):
         f.write('clickable: %s,\n' % (str(clickable).lower()))
         f.write('geodesic: %s,\n' % (str(geodesic).lower()))
         f.write('path: PolylineCoordinates,\n')
+        f.write('icons: [{%s}],\n' % icons)
         f.write('strokeColor: "%s",\n' % (strokeColor))
         f.write('strokeOpacity: %f,\n' % (strokeOpacity))
         f.write('strokeWeight: %d\n' % (strokeWeight))
