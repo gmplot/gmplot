@@ -48,6 +48,7 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self._fitBounds = None
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -231,6 +232,13 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
+    def fitBounds(self, latNE, lngNE, latSW, lngSW):
+        """adjust the map zoom to fit the given bounds"""
+
+        # TODO: the bounds coords could be computed automatically, by updating them
+        #       for every new object added to the map
+        self._fitBounds = (latNE, lngNE, latSW, lngSW)
+
     def draw(self, htmlfile):
         """Create the html file which include one google map and all points and paths. If 
         no string is provided, return the raw html.
@@ -258,6 +266,7 @@ class GoogleMapPlotter(object):
         self.write_shapes(f)
         self.write_heatmap(f)
         self.write_ground_overlay(f)
+        self.write_fitBounds(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -453,6 +462,15 @@ class GoogleMapPlotter(object):
             f.write("'" + url + "'," + '\n')
             f.write('imageBounds);' + '\n')
             f.write('groundOverlay.setMap(map);' + '\n')
+
+    def write_fitBounds(self, f):
+        if self._fitBounds:
+            f.write('\n')
+            f.write('rectBounds = new google.maps.LatLngBounds(\n')
+            f.write('    new google.maps.LatLng(%f, %f),\n'  % self._fitBounds[:2])
+            f.write('    new google.maps.LatLng(%f, %f));\n' % self._fitBounds[2:])
+            f.write('map.fitBounds(rectBounds);\n')
+
 
 if __name__ == "__main__":
     apikey=''
