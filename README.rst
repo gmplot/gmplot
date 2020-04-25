@@ -57,7 +57,7 @@ map initilization to the location of your choice. Rather than providing latitude
 longitude, and zoom level during initialization, grab your gmplot instance with
 a location and a valid Google Maps API key:
 
-::
+.. code:: python
 
     apikey = '' # (your API key goes here)
     gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco", apikey)
@@ -80,7 +80,7 @@ Passing in one of the supported `map types
 <https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes>`_
 for the optional ``map_type`` parameter allows you to change the look of your map:
 
-::
+.. code:: python
 
     gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_type='satellite')
 
