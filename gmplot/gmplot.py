@@ -7,7 +7,7 @@ import requests
 import warnings
 import base64
 
-from collections import namedtuple
+from collections import namedtuple, Iterable
 
 from gmplot.color import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
@@ -73,16 +73,33 @@ class GoogleMapPlotter(object):
         self.points.append((lat, lng, get_hex_color_code(c or color), title, precision))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
+        """
+        Plot a collection of points on the map.
+
+        :param lats: List of latitudes.
+        :param lngs: List of longitudes.
+        :param color: Color of plotted points.
+        :param size: Size of plotted points (doesn't affect markers). Can be a list of sizes corresponding to each point.
+        :param marker: True to plot points as markers, False to plot them as symbols.
+        :param c: (Same as `color`.)
+        :param s: (Same as `size`.)
+        :param symbol: Shape of the plotted points (doesn't affect markers).
+        """
         color = color or c
         size = size or s or 40
+
+        # If `size` is a single value, expand it into a list to match the list of points:
+        if not isinstance(size, Iterable):
+            size = [size] * len(lats)
+
         kwargs["color"] = color
-        kwargs["size"] = size
         settings = self._process_kwargs(kwargs)
-        for lat, lng in zip(lats, lngs):
+        
+        for lat, lng, symbol_size in zip(lats, lngs, size):
             if marker:
                 self.marker(lat, lng, settings['color'], precision=settings['precision'])
             else:
-                self._add_symbol(Symbol(symbol, lat, lng, size), **settings)
+                self._add_symbol(Symbol(symbol, lat, lng, symbol_size), **settings)
 
     def _add_symbol(self, symbol, color=None, c=None, **kwargs):
         color = color or c
