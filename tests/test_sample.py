@@ -1,9 +1,7 @@
 import unittest
-
 import gmplot
 
 class TestMarkers(unittest.TestCase):
-
     def setUp(self):
         self.gmap = gmplot.GoogleMapPlotter(0, 0, 0)
 
@@ -19,6 +17,3 @@ class TestMarkers(unittest.TestCase):
         self.gmap.marker(1, 11)
         self.gmap.marker(2, 22)
         map_html = self.gmap.get()
-
-if __name__ == '__main__':
-    unittest.main()
