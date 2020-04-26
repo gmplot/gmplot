@@ -8,12 +8,10 @@ import warnings
 
 from collections import namedtuple
 
-from gmplot.color_dicts import mpl_color_map, html_color_codes
+from gmplot.color_dicts import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 
-
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
-
 
 class InvalidSymbolError(Exception):
     pass
@@ -27,9 +25,7 @@ def safe_iter(var):
     except TypeError:
         return [var]
 
-
 class GoogleMapPlotter(object):
-
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
@@ -46,8 +42,6 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        self.color_dict = mpl_color_map
-        self.html_color_codes = html_color_codes
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -69,11 +63,7 @@ class GoogleMapPlotter(object):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
-        if c:
-            color = c
-        color = self.color_dict.get(color, color)
-        color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        self.points.append((lat, lng, get_hex_color_code(c or color)[1:], title))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -131,12 +121,9 @@ class GoogleMapPlotter(object):
                             settings["edge_color"] or \
                             settings["face_color"]
 
-        # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
             if 'color' in key:
-                color = self.color_dict.get(color, color)
-                color = self.html_color_codes.get(color, color)
-                settings[key] = color
+                settings[key] = get_hex_color_code(color)
 
         settings["closed"] = kwargs.get("closed", None)
         return settings
@@ -160,7 +147,7 @@ class GoogleMapPlotter(object):
         settings = {}
         # Try to give anyone using threshold a heads up.
         if threshold != 10:
-            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of maxIntensity.")
+            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'maxIntensity'.", FutureWarning)
         settings['threshold'] = threshold
         settings['radius'] = radius
         settings['gradient'] = gradient
