@@ -323,8 +323,16 @@ class GoogleMapPlotter(object):
     def write_point(self, f, lat, lon, color, title):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
-        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
-                (self.coloricon % color[1:]))
+
+        get_marker_icon_path = lambda color: self.coloricon % color[1:]
+        marker_icon_path = get_marker_icon_path(color)
+
+        if not os.path.exists(marker_icon_path):
+            warnings.warn(" Marker color '%s' isn't supported." % color)
+            marker_icon_path = get_marker_icon_path('#000000')
+
+        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' % marker_icon_path)
+
         f.write('\t\tvar marker = new google.maps.Marker({\n')
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
