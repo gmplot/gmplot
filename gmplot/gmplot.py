@@ -72,7 +72,7 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation", precision=6):
+    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6):
         if c:
             color = c
         color = self.color_dict.get(color, color)
@@ -344,7 +344,8 @@ class GoogleMapPlotter(object):
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
-        f.write('\t\ttitle: "%s",\n' % title)
+        if title is not None:
+            f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
