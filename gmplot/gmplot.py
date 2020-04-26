@@ -317,12 +317,18 @@ class GoogleMapPlotter(object):
         w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache):
-        color = color[1:]
-        marker_name = 'marker_%s' % color
+        marker_name = 'marker_%s' % color[1:]
+
+        get_marker_icon_path = lambda color: self.coloricon % color[1:]
+        marker_icon_path = get_marker_icon_path(color)
+
+        if not os.path.exists(marker_icon_path):
+            warnings.warn(" Marker color '%s' isn't supported." % color)
+            marker_icon_path = get_marker_icon_path('#000000')
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
         if color not in color_cache:
-            with open(self.coloricon % color, 'rb') as f:
+            with open(marker_icon_path, 'rb') as f:
                 base64_icon = base64.b64encode(f.read()).decode()
 
             w.write('var %s = new google.maps.MarkerImage("data:image/png;base64,%s");' % (marker_name, base64_icon))
