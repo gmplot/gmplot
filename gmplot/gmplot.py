@@ -70,7 +70,7 @@ class GoogleMapPlotter(object):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6):
-        self.points.append((lat, lng, get_hex_color_code(c or color)[1:], title, precision))
+        self.points.append((lat, lng, get_hex_color_code(c or color), title, precision))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -317,6 +317,7 @@ class GoogleMapPlotter(object):
         w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache):
+        color = color[1:]
         marker_name = 'marker_%s' % color
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
