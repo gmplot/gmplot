@@ -29,6 +29,7 @@ def safe_iter(var):
 
 
 class GoogleMapPlotter(object):
+    HEATMAP_DEFAULT_WEIGHT = 1
 
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
         self.center = (float(center_lat), float(center_lng))
@@ -148,14 +149,21 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True):
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, weights=None):
         """
-        :param lats: list of latitudes
-        :param lngs: list of longitudes
-        :param maxIntensity:(int) max frequency to use when plotting. Default (None) uses max value on map domain.
-        :param threshold:
-        :param radius: The hardest param. Example (string):
-        :return:
+        Plot a heatmap.
+
+        :param lats: List of latitudes.
+        :param lngs: List of longitudes.
+        :param threshold: (Deprecated; use `maxIntensity` instead.)
+        :param radius: Radius of influence for each data point, in pixels.
+        :param gradient: Color gradient of the heatmap, as an array of CSS color strings.
+        :param opacity: Opacity of the heatmap, ranging from 0 to 1.
+        :param maxIntensity: Maximum intensity of the heatmap.
+        :param dissipating: True to dissipate the heatmap on zooming, False to disable dissipation. 
+        :param weights: List of weights corresponding to each data point.
+        
+        More info: https://developers.google.com/maps/documentation/javascript/reference/visualization#HeatmapLayerOptions
         """
         settings = {}
         # Try to give anyone using threshold a heads up.
@@ -169,9 +177,12 @@ class GoogleMapPlotter(object):
         settings['dissipating'] = dissipating
         settings = self._process_heatmap_kwargs(settings)
 
+        if weights is None:
+            weights = [self.HEATMAP_DEFAULT_WEIGHT] * len(lats)
+
         heatmap_points = []
-        for lat, lng in zip(lats, lngs):
-            heatmap_points.append((lat, lng))
+        for lat, lng, weight in zip(lats, lngs, weights):
+            heatmap_points.append((lat, lng, weight))
         self.heatmap_points.append((heatmap_points, settings))
 
     def _process_heatmap_kwargs(self, settings_dict):
@@ -429,9 +440,12 @@ class GoogleMapPlotter(object):
     def write_heatmap(self, f):
         for heatmap_points, settings_string in self.heatmap_points:
             f.write('var heatmap_points = [\n')
-            for heatmap_lat, heatmap_lng in heatmap_points:
-                f.write('new google.maps.LatLng(%f, %f),\n' %
-                        (heatmap_lat, heatmap_lng))
+            for lat, lng, weight in heatmap_points:
+                location = 'new google.maps.LatLng(%f, %f)' % (lat, lng)
+                if weight == self.HEATMAP_DEFAULT_WEIGHT:
+                    f.write('%s,\n' % (location))
+                else:
+                    f.write('{location: %s, weight: %f},\n' % (location, weight)) 
             f.write('];\n')
             f.write('\n')
             f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
