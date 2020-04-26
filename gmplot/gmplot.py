@@ -32,6 +32,8 @@ def _format_LatLng(lat, lng, precision=6):
     return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lng)
 
 class GoogleMapPlotter(object):
+    _HEATMAP_DEFAULT_WEIGHT = 1
+
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
         self.center = (float(center_lat), float(center_lng))
@@ -159,16 +161,23 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6):
-        '''
-        :param lats: list of latitudes
-        :param lngs: list of longitudes
-        :param maxIntensity:(int) max frequency to use when plotting. Default (None) uses max value on map domain.
-        :param threshold:
-        :param radius: The hardest param. Example (string):
-        :return:
-        '''
+    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6, weights=None):
+        """
+        Plot a heatmap.
 
+        :param lats: List of latitudes.
+        :param lngs: List of longitudes.
+        :param threshold: (Deprecated; use `maxIntensity` instead.)
+        :param radius: Radius of influence for each data point, in pixels.
+        :param gradient: Color gradient of the heatmap, as an array of CSS color strings.
+        :param opacity: Opacity of the heatmap, ranging from 0 to 1.
+        :param maxIntensity: Maximum intensity of the heatmap.
+        :param dissipating: True to dissipate the heatmap on zooming, False to disable dissipation.
+        :param precision: Number of digits after the decimal to round to for lat/lng values.
+        :param weights: List of weights corresponding to each data point.
+        
+        More info: https://developers.google.com/maps/documentation/javascript/reference/visualization#HeatmapLayerOptions
+        """
         # Try to give anyone using threshold a heads up.
         if threshold is not None:
             warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'maxIntensity'.", FutureWarning)
@@ -183,9 +192,12 @@ class GoogleMapPlotter(object):
         settings['maxIntensity'] = maxIntensity
         settings['dissipating'] = dissipating
 
+        if weights is None:
+            weights = [self._HEATMAP_DEFAULT_WEIGHT] * len(lats)
+
         heatmap_points = []
-        for lat, lng in zip(lats, lngs):
-            heatmap_points.append((lat, lng))
+        for lat, lng, weight in zip(lats, lngs, weights):
+            heatmap_points.append((lat, lng, weight))
         self.heatmap_points.append((heatmap_points, settings, precision))
 
     def ground_overlay(self, url, bounds_dict, opacity=1.0):
@@ -446,8 +458,12 @@ class GoogleMapPlotter(object):
             w.write('map: map,')
             w.write('data: [')
             w.indent()
-            for heatmap_lat, heatmap_lng in heatmap_points:
-                w.write('%s,' % _format_LatLng(heatmap_lat, heatmap_lng, precision))
+            for lat, lng, weight in heatmap_points:
+                location = _format_LatLng(lat, lng, precision)
+                if weight == self._HEATMAP_DEFAULT_WEIGHT:
+                    w.write('%s,' % location)
+                else:
+                    w.write('{location: %s, weight: %f},' % (location, weight)) 
             w.dedent()
             w.write(']')
             w.dedent()
