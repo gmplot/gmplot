@@ -11,9 +11,7 @@ from collections import namedtuple
 from gmplot.color_dicts import mpl_color_map, html_color_codes
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 
-
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
-
 
 class InvalidSymbolError(Exception):
     pass
@@ -27,13 +25,10 @@ def safe_iter(var):
     except TypeError:
         return [var]
 
-
 def _format_LatLng(lat, lon, precision=6):
     return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lon)
 
-
 class GoogleMapPlotter(object):
-
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
@@ -154,7 +149,7 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6):
+    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6):
         """
         :param lats: list of latitudes
         :param lngs: list of longitudes
@@ -163,44 +158,25 @@ class GoogleMapPlotter(object):
         :param radius: The hardest param. Example (string):
         :return:
         """
-        settings = {}
+
         # Try to give anyone using threshold a heads up.
-        if threshold != 10:
+        if threshold is not None:
             warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of maxIntensity.")
+        else:
+            threshold = 10
+            
+        settings = {}
         settings['threshold'] = threshold
         settings['radius'] = radius
         settings['gradient'] = gradient
         settings['opacity'] = opacity
         settings['maxIntensity'] = maxIntensity
         settings['dissipating'] = dissipating
-        settings = self._process_heatmap_kwargs(settings)
 
         heatmap_points = []
         for lat, lng in zip(lats, lngs):
             heatmap_points.append((lat, lng))
         self.heatmap_points.append((heatmap_points, settings, precision))
-
-    def _process_heatmap_kwargs(self, settings_dict):
-        settings_string = ''
-        settings_string += "heatmap.set('threshold', %d);\n" % settings_dict['threshold']
-        settings_string += "heatmap.set('radius', %d);\n" % settings_dict['radius']
-        settings_string += "heatmap.set('maxIntensity', %d);\n" % settings_dict['maxIntensity']
-        settings_string += "heatmap.set('opacity', %f);\n" % settings_dict['opacity']
-
-        dissipation_string = 'true' if settings_dict['dissipating'] else 'false'
-        settings_string += "heatmap.set('dissipating', %s);\n" % (dissipation_string)
-
-        gradient = settings_dict['gradient']
-        if gradient:
-            gradient_string = "var gradient = [\n"
-            for r, g, b, a in gradient:
-                gradient_string += "\t" + "'rgba(%d, %d, %d, %d)',\n" % (r, g, b, a)
-            gradient_string += '];' + '\n'
-            gradient_string += "heatmap.set('gradient', gradient);\n"
-
-            settings_string += gradient_string
-
-        return settings_string
 
     def ground_overlay(self, url, bounds_dict, opacity=1.0):
         '''
@@ -219,17 +195,7 @@ class GoogleMapPlotter(object):
         https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
         '''
 
-        bounds_string = self._process_ground_overlay_image_bounds(bounds_dict)
-        self.ground_overlays.append((url, bounds_string, opacity))
-
-    def _process_ground_overlay_image_bounds(self, bounds_dict):
-        bounds_string = 'var imageBounds = {'
-        bounds_string += "north:  %.4f,\n" % bounds_dict['north']
-        bounds_string += "south:  %.4f,\n" % bounds_dict['south']
-        bounds_string += "east:  %.4f,\n" % bounds_dict['east']
-        bounds_string += "west:  %.4f};\n" % bounds_dict['west']
-
-        return bounds_string
+        self.ground_overlays.append((url, bounds_dict, opacity))
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         color = color or c
@@ -328,28 +294,22 @@ class GoogleMapPlotter(object):
             self.write_polygon(f, shape, settings)
 
     def write_map(self, f):
-        f.write('\t\tvar centerlatlng = %s;\n' % (_format_LatLng(self.center[0], self.center[1]),))
-        f.write('\t\tvar myOptions = {\n')
+        f.write('\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), {\n')
         if self.map_type:
-            f.write('\t\t\tmapTypeId: \'%s\',\n' % self.map_type.lower())
+            f.write('\t\t\tmapTypeId: "%s",\n' % self.map_type.lower())
         f.write('\t\t\tzoom: %d,\n' % (self.zoom))
-        f.write('\t\t\tcenter: centerlatlng\n')
-        f.write('\t\t};\n')
-        f.write(
-            '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
+        f.write('\t\t\tcenter: %s\n' % (_format_LatLng(self.center[0], self.center[1])))
+        f.write('\t\t});\n')
         f.write('\n')
 
     def write_point(self, f, lat, lon, color, title, precision):
-        f.write('\t\tvar latlng = %s;\n' % (_format_LatLng(lat, lon, precision),))
-        f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
-                (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\tnew google.maps.Marker({\n')
         if title is not None:
-            f.write('\t\ttitle: "%s",\n' % title)
-        f.write('\t\ticon: img,\n')
-        f.write('\t\tposition: latlng\n')
+            f.write('\t\t\ttitle: "%s",\n' % title)
+        f.write('\t\t\ticon: new google.maps.MarkerImage("%s"),\n' % (self.coloricon % color))
+        f.write('\t\t\tposition: %s,\n' % (_format_LatLng(lat, lon, precision)))
+        f.write('\t\t\tmap: map\n')
         f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
         f.write('\n')
 
     def write_symbol(self, f, symbol, settings):
@@ -385,23 +345,19 @@ class GoogleMapPlotter(object):
         strokeWeight = settings.get('edge_width')
         precision = settings.get("precision")
 
-        f.write('var PolylineCoordinates = [\n')
+        f.write('\t\tnew google.maps.Polyline({\n')
+        f.write('\t\t\tclickable: %s,\n' % (str(clickable).lower()))
+        f.write('\t\t\tgeodesic: %s,\n' % (str(geodesic).lower()))
+        f.write('\t\t\tstrokeColor: "%s",\n' % (strokeColor))
+        f.write('\t\t\tstrokeOpacity: %f,\n' % (strokeOpacity))
+        f.write('\t\t\tstrokeWeight: %d,\n' % (strokeWeight))
+        f.write('\t\t\tmap: map,\n')
+        f.write('\t\t\tpath: [\n')
         for coordinate in path:
-            f.write('%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision),))
-        f.write('];\n')
+            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision)))
+        f.write('\t\t\t]\n')
+        f.write('\t\t});\n')
         f.write('\n')
-
-        f.write('var Path = new google.maps.Polyline({\n')
-        f.write('clickable: %s,\n' % (str(clickable).lower()))
-        f.write('geodesic: %s,\n' % (str(geodesic).lower()))
-        f.write('path: PolylineCoordinates,\n')
-        f.write('strokeColor: "%s",\n' % (strokeColor))
-        f.write('strokeOpacity: %f,\n' % (strokeOpacity))
-        f.write('strokeWeight: %d\n' % (strokeWeight))
-        f.write('});\n')
-        f.write('\n')
-        f.write('Path.setMap(map);\n')
-        f.write('\n\n')
 
     def write_polygon(self, f, path, settings):
         clickable = False
@@ -413,52 +369,57 @@ class GoogleMapPlotter(object):
         fillOpacity= settings.get('face_alpha')
         precision = settings.get("precision")
 
-        f.write('var coords = [\n')
+        f.write('\t\tnew google.maps.Polygon({\n')
+        f.write('\t\t\tclickable: %s,\n' % (str(clickable).lower()))
+        f.write('\t\t\tgeodesic: %s,\n' % (str(geodesic).lower()))
+        f.write('\t\t\tfillColor: "%s",\n' % (fillColor))
+        f.write('\t\t\tfillOpacity: %f,\n' % (fillOpacity))
+        f.write('\t\t\tstrokeColor: "%s",\n' % (strokeColor))
+        f.write('\t\t\tstrokeOpacity: %f,\n' % (strokeOpacity))
+        f.write('\t\t\tstrokeWeight: %d,\n' % (strokeWeight))
+        f.write('\t\t\tmap: map,\n')
+        f.write('\t\t\tpaths: [\n')
         for coordinate in path:
-            f.write('%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision),))
-        f.write('];\n')
+            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision)))
+        f.write('\t\t\t]\n')
+        f.write('\t\t});\n')
         f.write('\n')
-
-        f.write('var polygon = new google.maps.Polygon({\n')
-        f.write('clickable: %s,\n' % (str(clickable).lower()))
-        f.write('geodesic: %s,\n' % (str(geodesic).lower()))
-        f.write('fillColor: "%s",\n' % (fillColor))
-        f.write('fillOpacity: %f,\n' % (fillOpacity))
-        f.write('paths: coords,\n')
-        f.write('strokeColor: "%s",\n' % (strokeColor))
-        f.write('strokeOpacity: %f,\n' % (strokeOpacity))
-        f.write('strokeWeight: %d\n' % (strokeWeight))
-        f.write('});\n')
-        f.write('\n')
-        f.write('polygon.setMap(map);\n')
-        f.write('\n\n')
 
     def write_heatmap(self, f):
-        for heatmap_points, settings_string, precision in self.heatmap_points:
-            f.write('var heatmap_points = [\n')
+        for heatmap_points, settings_dict, precision in self.heatmap_points:
+            f.write('\t\tnew google.maps.visualization.HeatmapLayer({\n')
+            f.write('\t\t\tthreshold: %d,\n' % settings_dict['threshold'])
+            f.write('\t\t\tradius: %d,\n' % settings_dict['radius'])
+            f.write('\t\t\tmaxIntensity: %d,\n' % settings_dict['maxIntensity'])
+            f.write('\t\t\topacity: %f,\n' % settings_dict['opacity'])
+            f.write('\t\t\tdissipating: %s,\n' % ('true' if settings_dict['dissipating'] else 'false'))
+            if settings_dict['gradient']:
+                f.write('\t\t\tgradient: [\n')
+                for r, g, b, a in settings_dict['gradient']:
+                    f.write('\t\t\t\t"rgba(%d, %d, %d, %d)",\n' % (r, g, b, a))
+                f.write('\t\t\t],\n')
+            f.write('\t\t\tmap: map,\n')
+            f.write('\t\t\tdata: [\n')
             for heatmap_lat, heatmap_lng in heatmap_points:
-                f.write('%s,\n' % (_format_LatLng(heatmap_lat, heatmap_lng, precision),))
-            f.write('];\n')
+                f.write('\t\t\t\t%s,\n' % (_format_LatLng(heatmap_lat, heatmap_lng, precision)))
+            f.write('\t\t\t]\n')
+            f.write('\t\t});\n')
             f.write('\n')
-            f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
-            f.write('var heatmap;' + '\n')
-            f.write('heatmap = new google.maps.visualization.HeatmapLayer({' + '\n')
-            f.write('\n')
-            f.write('data: pointArray' + '\n')
-            f.write('});' + '\n')
-            f.write('heatmap.setMap(map);' + '\n')
-            f.write(settings_string)
 
     def write_ground_overlay(self, f):
-
-        for url, bounds_string, opacity in self.ground_overlays:
-            f.write(bounds_string)
-            f.write('var groundOverlay;' + '\n')
-            f.write('groundOverlay = new google.maps.GroundOverlay(' + '\n')
+        for url, bounds_dict, opacity in self.ground_overlays:
+            f.write('\t\tnew google.maps.GroundOverlay(\n')
+            f.write('\t\t\t"%s",\n' % url)
+            f.write('\t\t\t{\n')
+            for direction in ['north', 'south', 'east', 'west']:
+                f.write('\t\t\t\t%s: %.4f,\n' % (direction, bounds_dict[direction]))
+            f.write('\t\t\t},\n')
+            f.write('\t\t\t{\n')
+            f.write('\t\t\t\topacity: %f,\n' % opacity)
+            f.write('\t\t\t\tmap: map\n')
+            f.write('\t\t\t}\n')
+            f.write('\t\t);\n')
             f.write('\n')
-            f.write("'" + url + "'," + '\n')
-            f.write('imageBounds, {opacity: %f});' %opacity + '\n')
-            f.write('groundOverlay.setMap(map);' + '\n')
 
 if __name__ == "__main__":
     apikey=''
