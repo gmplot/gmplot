@@ -1,4 +1,7 @@
-mpl_color_map = {
+import re
+import warnings
+
+_MATPLOTLIB_COLOR_MAP = {
     'b': 'blue',
     'g': 'green',
     'r': 'red',
@@ -9,7 +12,7 @@ mpl_color_map = {
     'w': 'white'
 }
 
-html_color_codes = {
+_HTML_COLOR_CODES = {
     'aliceblue':            '#F0F8FF',
     'antiquewhite':         '#FAEBD7',
     'aqua':                 '#00FFFF',
@@ -159,3 +162,32 @@ html_color_codes = {
     'yellow':               '#FFFF00',
     'yellowgreen':          '#9ACD32'
 }
+
+def is_valid_hex_color(color):
+    """
+    Return whether or not a given color is a valid hex color.
+
+    :param color: Color to check.
+    :return: True if the given color is a valid hex color, False otherwise.
+    """
+
+    return isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color)
+
+def get_hex_color_code(color):
+    """
+    Return the hex color code for a given color.
+
+    :param color: Color of interest. Can be in hex ('#00FFFF'), a named color ('cyan'), or a matplotlib-style color ('c').
+    :return: Hex color code for the given color.
+    """
+
+    if not is_valid_hex_color(color):
+        color = _MATPLOTLIB_COLOR_MAP.get(color, color)
+
+        if color in _HTML_COLOR_CODES:
+            color = _HTML_COLOR_CODES[color]
+        else:
+            warnings.warn("Color '%s' isn't supported." % color)
+            color = '#000000'
+
+    return color.upper()

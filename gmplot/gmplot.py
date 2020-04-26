@@ -9,7 +9,7 @@ import base64
 
 from collections import namedtuple
 
-from gmplot.color_dicts import mpl_color_map, html_color_codes
+from gmplot.color_dicts import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 from gmplot.writer import _FileWriter, _StringWriter
 
@@ -48,8 +48,6 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        self.color_dict = mpl_color_map
-        self.html_color_codes = html_color_codes
         self.title = 'Google Maps - gmplot'
 
     @classmethod
@@ -72,11 +70,7 @@ class GoogleMapPlotter(object):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6):
-        if c:
-            color = c
-        color = self.color_dict.get(color, color)
-        color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title, precision))
+        self.points.append((lat, lng, get_hex_color_code(c or color)[1:], title, precision))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -131,12 +125,9 @@ class GoogleMapPlotter(object):
 
         settings["precision"] = kwargs.get("precision", 6)
 
-        # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
             if 'color' in key:
-                color = self.color_dict.get(color, color)
-                color = self.html_color_codes.get(color, color)
-                settings[key] = color
+                settings[key] = get_hex_color_code(color)
 
         settings["closed"] = kwargs.get("closed", None)
         return settings
@@ -160,7 +151,7 @@ class GoogleMapPlotter(object):
 
         # Try to give anyone using threshold a heads up.
         if threshold is not None:
-            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of maxIntensity.")
+            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'maxIntensity'.", FutureWarning)
         else:
             threshold = 10
             
