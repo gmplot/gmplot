@@ -104,32 +104,35 @@ class GoogleMapPlotter(object):
         self.circles.append(((lat, lng, radius), settings))
 
     def _process_kwargs(self, kwargs):
+        """
+        Process the given kwargs into visualization settings.
+
+        :param kwargs: Dict of keyworded arguments to be converted into visualization settings.
+        :return: Processed dict of settings.
+        """
         settings = dict()
-        settings["edge_color"] = kwargs.get("color", None) or \
-                                 kwargs.get("edge_color", None) or \
-                                 kwargs.get("ec", None) or \
-                                 "#000000"
 
-        settings["edge_alpha"] = kwargs.get("alpha", None) or \
-                                 kwargs.get("edge_alpha", None) or \
-                                 kwargs.get("ea", None) or \
-                                 1.0
-        settings["edge_width"] = kwargs.get("edge_width", None) or \
-                                 kwargs.get("ew", None) or \
-                                 1.0
-        settings["face_alpha"] = kwargs.get("alpha", None) or \
-                                 kwargs.get("face_alpha", None) or \
-                                 kwargs.get("fa", None) or \
-                                 0.3
-        settings["face_color"] = kwargs.get("color", None) or \
-                                 kwargs.get("face_color", None) or \
-                                 kwargs.get("fc", None) or \
-                                 "#000000"
+        settings["edge_color"] = kwargs.get("color",
+                                 kwargs.get("edge_color",
+                                 kwargs.get("ec", "#000000")))
 
-        settings["color"] = kwargs.get("color", None) or \
-                            kwargs.get("c", None) or \
-                            settings["edge_color"] or \
-                            settings["face_color"]
+        settings["edge_alpha"] = kwargs.get("alpha",
+                                 kwargs.get("edge_alpha",
+                                 kwargs.get("ea", 1.0)))
+
+        settings["edge_width"] = kwargs.get("edge_width",
+                                 kwargs.get("ew", 1.0))
+
+        settings["face_alpha"] = kwargs.get("alpha",
+                                 kwargs.get("face_alpha",
+                                 kwargs.get("fa", 0.3)))
+
+        settings["face_color"] = kwargs.get("color",
+                                 kwargs.get("face_color",
+                                 kwargs.get("fc", "#000000")))
+
+        settings["color"] = kwargs.get("color",
+                            kwargs.get("c", settings["edge_color"]))
 
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
