@@ -9,7 +9,7 @@ import base64
 
 from collections import namedtuple
 
-from gmplot.color_dicts import get_hex_color_code
+from gmplot.color import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 from gmplot.writer import _FileWriter, _StringWriter
 
