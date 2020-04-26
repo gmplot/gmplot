@@ -8,7 +8,7 @@ import warnings
 
 from collections import namedtuple
 
-from gmplot.color_dicts import get_hex_color_code
+from gmplot.color import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
