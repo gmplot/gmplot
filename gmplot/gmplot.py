@@ -48,6 +48,10 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.color_dict = mpl_color_map
         self.html_color_codes = html_color_codes
+        self.title = 'Google Maps - gmplot'
+        self._fitBounds = None
+        self._symbols = {}
+        self._infowindows = []
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -139,6 +143,7 @@ class GoogleMapPlotter(object):
                 settings[key] = color
 
         settings["closed"] = kwargs.get("closed", None)
+        settings["icons"] = kwargs.get("icons", {})
         return settings
 
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
@@ -232,6 +237,36 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
+    def fitBounds(self, latNE, lngNE, latSW, lngSW):
+        """adjust the map zoom to fit the given bounds"""
+
+        # TODO: the bounds coords could be computed automatically, by updating them
+        #       for every new object added to the map
+        self._fitBounds = (latNE, lngNE, latSW, lngSW)
+
+    def add_symbol(self, name, properties):
+        """
+        add a gmap symbol to the map objects, which can then be used in markers/polylines
+
+        name: the variable name (which you will reference in the other objects)
+        properties: a dictionary with the symbol properties
+
+        Ref: https://developers.google.com/maps/documentation/javascript/symbols
+        """
+
+        self._symbols[name] = properties
+
+    def infowindow(self, content, lat, lng):
+        """
+        Add an info window with the given content at the specified coordinates
+
+        Ref: https://developers.google.com/maps/documentation/javascript/infowindows
+        """
+
+        # TODO: support multiple colors, maybe refactoring the marker color code?
+
+        self._infowindows.append((content, lat, lng))
+
     def draw(self, htmlfile):
         """Create the html file which include one google map and all points and paths. If 
         no string is provided, return the raw html.
@@ -243,7 +278,7 @@ class GoogleMapPlotter(object):
             '<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />\n')
         f.write(
             '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
-        f.write('<title>Google Maps - gmplot </title>\n')
+        f.write('<title>%s</title>\n' % self.title)
         if self.apikey:
             f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&key=%s"></script>\n' % self.apikey )
         else:
@@ -251,14 +286,17 @@ class GoogleMapPlotter(object):
         f.write('<script type="text/javascript">\n')
         f.write('\tfunction initialize() {\n')
         self.write_map(f)
+        self.write_symbols(f)  # symbols have to be defined before being used
         self.write_grids(f)
-        self.write_points(f)
+        self.write_markers(f)
         self.write_paths(f)
         self.write_circles(f)
         self.write_symbols(f)
         self.write_shapes(f)
         self.write_heatmap(f)
+        self.write_infowindows(f)
         self.write_ground_overlay(f)
+        self.write_fitBounds(f)
         f.write('\t}\n')
         f.write('</script>\n')
         f.write('</head>\n')
@@ -301,9 +339,9 @@ class GoogleMapPlotter(object):
             settings = self._process_kwargs({"color": "#000000"})
             self.write_polyline(f, line, settings)
 
-    def write_points(self, f):
+    def write_markers(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_marker(f, point[0], point[1], point[2], point[3])
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -334,17 +372,17 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
+    def write_marker(self, f, lat, lon, color, title, name='marker'):
         f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
                 (lat, lon))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
-        f.write('\t\tvar marker = new google.maps.Marker({\n')
+        f.write('\t\tvar %s = new google.maps.Marker({\n' % name)
         f.write('\t\ttitle: "%s",\n' % title)
         f.write('\t\ticon: img,\n')
         f.write('\t\tposition: latlng\n')
         f.write('\t\t});\n')
-        f.write('\t\tmarker.setMap(map);\n')
+        f.write('\t\t%s.setMap(map);\n' % name)
         f.write('\n')
 
     def write_symbol(self, f, symbol, settings):
@@ -375,9 +413,18 @@ class GoogleMapPlotter(object):
     def write_polyline(self, f, path, settings):
         clickable = False
         geodesic = True
+        icons = ''
+        _icons = settings.get('icons', {})
         strokeColor = settings.get('color') or settings.get('edge_color')
         strokeOpacity = settings.get('edge_alpha')
         strokeWeight = settings.get('edge_width')
+        for k in _icons:
+            # icon argument must not be in quotes
+            if k == 'icon':
+                icons += '%s: %s, ' % (k, _icons[k])
+            else:
+                icons += "%s: '%s', " % (k, _icons[k])
+
 
         f.write('var PolylineCoordinates = [\n')
         for coordinate in path:
@@ -390,6 +437,7 @@ class GoogleMapPlotter(object):
         f.write('clickable: %s,\n' % (str(clickable).lower()))
         f.write('geodesic: %s,\n' % (str(geodesic).lower()))
         f.write('path: PolylineCoordinates,\n')
+        f.write('icons: [{%s}],\n' % icons)
         f.write('strokeColor: "%s",\n' % (strokeColor))
         f.write('strokeOpacity: %f,\n' % (strokeOpacity))
         f.write('strokeWeight: %d\n' % (strokeWeight))
@@ -454,6 +502,35 @@ class GoogleMapPlotter(object):
             f.write("'" + url + "'," + '\n')
             f.write('imageBounds, {opacity: %f});' %opacity + '\n')
             f.write('groundOverlay.setMap(map);' + '\n')
+
+    def write_fitBounds(self, f):
+        if self._fitBounds:
+            f.write('\n')
+            f.write('rectBounds = new google.maps.LatLngBounds(\n')
+            f.write('    new google.maps.LatLng(%f, %f),\n'  % self._fitBounds[:2])
+            f.write('    new google.maps.LatLng(%f, %f));\n' % self._fitBounds[2:])
+            f.write('map.fitBounds(rectBounds);\n')
+
+    def write_symbols(self, f):
+        for name in self._symbols:
+            f.write('\n')
+            f.write('var %s = {\n' % name)
+            for k in self._symbols[name]:
+                f.write('    %s: %s,\n' % (k, self._symbols[name][k]))
+            f.write('};\n\n')
+
+    def write_infowindows(self, f):
+        for i, infowindow in enumerate(self._infowindows):
+            content, lat, lng = infowindow
+            markername = 'infowindow_marker_%i' % i
+            infowindowname = 'infowindow_%i' % i
+            self.write_marker(f, lat, lng, color='FF0000', name=markername)
+            f.write('  var %s = new google.maps.InfoWindow({\n' % infowindowname)
+            f.write("    content: %s\n" % content)
+            f.write('  });\n')
+            f.write("  %s.addListener('click', function() {\n" % markername)
+            f.write('    %s.open(map, %s);\n' % (infowindowname, markername))
+            f.write('  });\n\n')
 
 if __name__ == "__main__":
     apikey=''
