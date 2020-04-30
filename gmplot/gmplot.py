@@ -28,6 +28,10 @@ def safe_iter(var):
         return [var]
 
 
+def _format_LatLng(lat, lon, precision=6):
+    return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lon)
+
+
 class GoogleMapPlotter(object):
 
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
@@ -68,12 +72,12 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation"):
+    def marker(self, lat, lng, color='#FF0000', c=None, title="no implementation", precision=6):
         if c:
             color = c
         color = self.color_dict.get(color, color)
         color = self.html_color_codes.get(color, color)
-        self.points.append((lat, lng, color[1:], title))
+        self.points.append((lat, lng, color[1:], title, precision))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         color = color or c
@@ -83,7 +87,7 @@ class GoogleMapPlotter(object):
         settings = self._process_kwargs(kwargs)
         for lat, lng in zip(lats, lngs):
             if marker:
-                self.marker(lat, lng, settings['color'])
+                self.marker(lat, lng, settings['color'], precision=settings['precision'])
             else:
                 self._add_symbol(Symbol(symbol, lat, lng, size), **settings)
 
@@ -131,9 +135,7 @@ class GoogleMapPlotter(object):
                             settings["edge_color"] or \
                             settings["face_color"]
 
-        settings["precision"] = kwargs.get("precision", None) or \
-                            kwargs.get("p", None) or \
-                            6
+        settings["precision"] = kwargs.get("precision", 6)
 
         # Need to replace "plum" with "#DDA0DD" and "c" with "#00FFFF" (cyan).
         for key, color in settings.items():
@@ -152,7 +154,7 @@ class GoogleMapPlotter(object):
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True):
+    def heatmap(self, lats, lngs, threshold=10, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6):
         """
         :param lats: list of latitudes
         :param lngs: list of longitudes
@@ -176,7 +178,7 @@ class GoogleMapPlotter(object):
         heatmap_points = []
         for lat, lng in zip(lats, lngs):
             heatmap_points.append((lat, lng))
-        self.heatmap_points.append((heatmap_points, settings))
+        self.heatmap_points.append((heatmap_points, settings, precision))
 
     def _process_heatmap_kwargs(self, settings_dict):
         settings_string = ''
@@ -307,7 +309,7 @@ class GoogleMapPlotter(object):
 
     def write_points(self, f):
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3])
+            self.write_point(f, point[0], point[1], point[2], point[3], point[4])
 
     def write_circles(self, f):
         for circle, settings in self.circles:
@@ -325,9 +327,8 @@ class GoogleMapPlotter(object):
         for shape, settings in self.shapes:
             self.write_polygon(f, shape, settings)
 
-    def write_map(self,  f):
-        f.write('\t\tvar centerlatlng = new google.maps.LatLng(%f, %f);\n' %
-                (self.center[0], self.center[1]))
+    def write_map(self, f):
+        f.write('\t\tvar centerlatlng = %s;\n' % (_format_LatLng(self.center[0], self.center[1]),))
         f.write('\t\tvar myOptions = {\n')
         if self.map_type:
             f.write('\t\t\tmapTypeId: \'%s\',\n' % self.map_type.lower())
@@ -338,9 +339,8 @@ class GoogleMapPlotter(object):
             '\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);\n')
         f.write('\n')
 
-    def write_point(self, f, lat, lon, color, title):
-        f.write('\t\tvar latlng = new google.maps.LatLng(%f, %f);\n' %
-                (lat, lon))
+    def write_point(self, f, lat, lon, color, title, precision):
+        f.write('\t\tvar latlng = %s;\n' % (_format_LatLng(lat, lon, precision),))
         f.write('\t\tvar img = new google.maps.MarkerImage(\'%s\');\n' %
                 (self.coloricon % color))
         f.write('\t\tvar marker = new google.maps.Marker({\n')
@@ -386,8 +386,7 @@ class GoogleMapPlotter(object):
 
         f.write('var PolylineCoordinates = [\n')
         for coordinate in path:
-            f.write('new google.maps.LatLng(%.*f, %.*f),\n' %
-                    (precision, coordinate[0], precision, coordinate[1]))
+            f.write('%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision),))
         f.write('];\n')
         f.write('\n')
 
@@ -415,8 +414,7 @@ class GoogleMapPlotter(object):
 
         f.write('var coords = [\n')
         for coordinate in path:
-            f.write('new google.maps.LatLng(%.*f, %.*f),\n' %
-                    (precision, coordinate[0], precision, coordinate[1]))
+            f.write('%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision),))
         f.write('];\n')
         f.write('\n')
 
@@ -435,11 +433,10 @@ class GoogleMapPlotter(object):
         f.write('\n\n')
 
     def write_heatmap(self, f):
-        for heatmap_points, settings_string in self.heatmap_points:
+        for heatmap_points, settings_string, precision in self.heatmap_points:
             f.write('var heatmap_points = [\n')
             for heatmap_lat, heatmap_lng in heatmap_points:
-                f.write('new google.maps.LatLng(%f, %f),\n' %
-                        (heatmap_lat, heatmap_lng))
+                f.write('%s,\n' % (_format_LatLng(heatmap_lat, heatmap_lng, precision),))
             f.write('];\n')
             f.write('\n')
             f.write('var pointArray = new google.maps.MVCArray(heatmap_points);' + '\n')
