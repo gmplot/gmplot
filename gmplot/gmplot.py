@@ -28,8 +28,8 @@ def safe_iter(var):
     except TypeError:
         return [var]
 
-def _format_LatLng(lat, lon, precision=6):
-    return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lon)
+def _format_LatLng(lat, lng, precision=6):
+    return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lng)
 
 class GoogleMapPlotter(object):
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
@@ -309,7 +309,7 @@ class GoogleMapPlotter(object):
         w.write('});')
         w.write()
 
-    def write_point(self, w, lat, lon, color, title, precision, color_cache):
+    def write_point(self, w, lat, lng, color, title, precision, color_cache):
         marker_name = 'marker_%s' % color
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
@@ -324,7 +324,7 @@ class GoogleMapPlotter(object):
         if title is not None:
             w.write('title: "%s",' % title)
         w.write('icon: %s,' % marker_name)
-        w.write('position: %s,' % _format_LatLng(lat, lon, precision))
+        w.write('position: %s,' % _format_LatLng(lat, lng, precision))
         w.write('map: map')
         w.dedent()
         w.write('});')
