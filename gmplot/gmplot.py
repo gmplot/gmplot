@@ -11,6 +11,7 @@ from collections import namedtuple
 
 from gmplot.color_dicts import mpl_color_map, html_color_codes
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
+from gmplot.writer import _FileWriter
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
 # TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
@@ -32,6 +33,7 @@ def _format_LatLng(lat, lon, precision=6):
 
 class GoogleMapPlotter(object):
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey=''):
+        # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
         self.map_type = str(map_type)
@@ -201,42 +203,45 @@ class GoogleMapPlotter(object):
         shape = zip(lats, lngs)
         self.shapes.append((shape, settings))
 
-    def draw(self, htmlfile):
-        """Create the html file which include one google map and all points and paths. If 
-        no string is provided, return the raw html.
+    def draw(self, file):
         """
-        f = open(htmlfile, 'w')
-        f.write('<html>\n')
-        f.write('<head>\n')
-        f.write(
-            '<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />\n')
-        f.write(
-            '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>\n')
-        f.write('<title>%s</title>\n' % self.title)
-        if self.apikey:
-            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&key=%s"></script>\n' % self.apikey )
-        else:
-            f.write('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization"></script>\n' )
-        f.write('<script type="text/javascript">\n')
-        f.write('\tfunction initialize() {\n')
-        self.write_map(f)
-        self.write_grids(f)
-        self.write_points(f)
-        self.write_paths(f)
-        self.write_symbols(f)
-        self.write_shapes(f)
-        self.write_heatmap(f)
-        self.write_ground_overlay(f)
-        f.write('\t}\n')
-        f.write('</script>\n')
-        f.write('</head>\n')
-        f.write(
-            '<body style="margin:0px; padding:0px;" onload="initialize()">\n')
-        f.write(
-            '\t<div id="map_canvas" style="width: 100%; height: 100%;"></div>\n')
-        f.write('</body>\n')
-        f.write('</html>\n')
-        f.close()
+        Create the HTML file which includes one Google Map and all elements to be rendered.
+
+        :param file: File to write to, as a file path.
+        """
+
+        with _FileWriter(file) as w:
+            w.write('''
+                <html>
+                <head>
+                <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+                <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+                <title>{title}</title>
+                <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization{key}"></script>
+                <script type="text/javascript">
+            '''.format(title=self.title, key=('&key=%s' % self.apikey if self.apikey else '')))
+            w.indent()
+            w.write('function initialize() {')
+            w.indent()
+            self.write_map(w)
+            self.write_grids(w)
+            self.write_points(w)
+            self.write_paths(w)
+            self.write_symbols(w)
+            self.write_shapes(w)
+            self.write_heatmap(w)
+            self.write_ground_overlay(w)
+            w.dedent()
+            w.write('}')
+            w.dedent()
+            w.write('''
+                </script>
+                </head>
+                <body style="margin:0px; padding:0px;" onload="initialize()">
+                    <div id="map_canvas" style="width: 100%; height: 100%;" />
+                </body>
+                </html>
+            ''')
 
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
@@ -244,7 +249,7 @@ class GoogleMapPlotter(object):
 
     # TODO: Prepend a single underscore to the following functions to make them non-public (counts as an API change).
 
-    def write_grids(self, f):
+    def write_grids(self, w):
         if self.gridsetting is None:
             return
         slat = self.gridsetting[0]
@@ -269,66 +274,69 @@ class GoogleMapPlotter(object):
 
         for line in self.grids:
             settings = self._process_kwargs({"color": "#000000"})
-            self.write_polyline(f, line, settings)
+            self.write_polyline(w, line, settings)
 
-    def write_points(self, f):
+    def write_points(self, w):
         color_cache = set()
         for point in self.points:
-            self.write_point(f, point[0], point[1], point[2], point[3], point[4], color_cache)
+            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache)
 
-    def write_circles(self, f): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+    def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function).
         for symbol, settings in self.symbols:
             if symbol.symbol == 'o':
-                self.write_symbol(f, symbol, settings)
+                self.write_symbol(w, symbol, settings)
 
-    def write_symbols(self, f):
+    def write_symbols(self, w):
         for symbol, settings in self.symbols:
-            self.write_symbol(f, symbol, settings)
+            self.write_symbol(w, symbol, settings)
 
-    def write_paths(self, f):
+    def write_paths(self, w):
         for path, settings in self.paths:
-            self.write_polyline(f, path, settings)
+            self.write_polyline(w, path, settings)
 
-    def write_shapes(self, f):
+    def write_shapes(self, w):
         for shape, settings in self.shapes:
-            self.write_polygon(f, shape, settings)
+            self.write_polygon(w, shape, settings)
 
-    def write_map(self, f):
-        f.write('\t\tvar map = new google.maps.Map(document.getElementById("map_canvas"), {\n')
+    def write_map(self, w):
+        w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
+        w.indent()
         if self.map_type:
-            f.write('\t\t\tmapTypeId: "%s",\n' % self.map_type.lower())
-        f.write('\t\t\tzoom: %d,\n' % (self.zoom))
-        f.write('\t\t\tcenter: %s\n' % (_format_LatLng(self.center[0], self.center[1])))
-        f.write('\t\t});\n')
-        f.write('\n')
+            w.write('mapTypeId: "%s",' % self.map_type.lower())
+        w.write('zoom: %d,' % self.zoom)
+        w.write('center: %s' % _format_LatLng(self.center[0], self.center[1]))
+        w.dedent()
+        w.write('});')
+        w.write()
 
-    def write_point(self, f, lat, lon, color, title, precision, color_cache):
+    def write_point(self, w, lat, lon, color, title, precision, color_cache):
         marker_name = 'marker_%s' % color
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
         if color not in color_cache:
             base64_icon = base64.b64encode(open(self.coloricon % color, 'rb').read()).decode()
-            f.write('\t\tvar %s = new google.maps.MarkerImage(\'data:image/png;base64,%s\');\n' %
-                (marker_name, base64_icon))
-            f.write('\n')
+            w.write('var %s = new google.maps.MarkerImage("data:image/png;base64,%s");' % (marker_name, base64_icon))
+            w.write()
             color_cache.add(color)
 
-        f.write('\t\tnew google.maps.Marker({\n')
+        w.write('new google.maps.Marker({')
+        w.indent()
         if title is not None:
-            f.write('\t\t\ttitle: "%s",\n' % title)
-        f.write('\t\t\ticon: %s,\n' % marker_name)
-        f.write('\t\t\tposition: %s,\n' % (_format_LatLng(lat, lon, precision)))
-        f.write('\t\t\tmap: map\n')
-        f.write('\t\t});\n')
-        f.write('\n')
+            w.write('title: "%s",' % title)
+        w.write('icon: %s,' % marker_name)
+        w.write('position: %s,' % _format_LatLng(lat, lon, precision))
+        w.write('map: map')
+        w.dedent()
+        w.write('});')
+        w.write()
 
-    def write_symbol(self, f, symbol, settings):
+    def write_symbol(self, w, symbol, settings):
         try:
             template = SYMBOLS[symbol.symbol]
         except KeyError:
             raise InvalidSymbolError("Symbol %s is not implemented" % symbol.symbol)
 
-        f.write(template.format(
+        w.write(template.format(
             lat=symbol.lat,
             long=symbol.long,
             size=symbol.size,
@@ -338,77 +346,97 @@ class GoogleMapPlotter(object):
             fillColor=settings.get('face_color'),
             fillOpacity=settings.get('face_alpha')
         ))
+        w.write()
 
-    def write_circle(self, f, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function).
-        self.write_symbol(f, Symbol('o', lat, long, size), settings)
+    def write_circle(self, w, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+        self.write_symbol(w, Symbol('o', lat, long, size), settings)
 
-    def write_polyline(self, f, path, settings):
-        f.write('\t\tnew google.maps.Polyline({\n')
-        f.write('\t\t\tclickable: %s,\n' % (str(False).lower()))
-        f.write('\t\t\tgeodesic: %s,\n' % (str(True).lower()))
-        f.write('\t\t\tstrokeColor: "%s",\n' % settings.get('color', settings.get('edge_color')))
-        f.write('\t\t\tstrokeOpacity: %f,\n' % settings.get('edge_alpha'))
-        f.write('\t\t\tstrokeWeight: %d,\n' % settings.get('edge_width'))
-        f.write('\t\t\tmap: map,\n')
-        f.write('\t\t\tpath: [\n')
+    def write_polyline(self, w, path, settings):
+        w.write('new google.maps.Polyline({')
+        w.indent()
+        w.write('clickable: %s,' % str(False).lower())
+        w.write('geodesic: %s,' % str(True).lower())
+        w.write('strokeColor: "%s",' % settings.get('color', settings.get('edge_color')))
+        w.write('strokeOpacity: %f,' % settings.get('edge_alpha'))
+        w.write('strokeWeight: %d,' % settings.get('edge_width'))
+        w.write('map: map,')
+        w.write('path: [')
+        w.indent()
         for coordinate in path:
-            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], settings.get("precision"))))
-        f.write('\t\t\t]\n')
-        f.write('\t\t});\n')
-        f.write('\n')
+            w.write('%s,' % _format_LatLng(coordinate[0], coordinate[1], settings.get("precision")))
+        w.dedent()
+        w.write(']')
+        w.dedent()
+        w.write('});')
+        w.write()
 
-    def write_polygon(self, f, path, settings):
-        f.write('\t\tnew google.maps.Polygon({\n')
-        f.write('\t\t\tclickable: %s,\n' % (str(False).lower()))
-        f.write('\t\t\tgeodesic: %s,\n' % (str(True).lower()))
-        f.write('\t\t\tfillColor: "%s",\n' % settings.get('face_color', settings.get('color')))
-        f.write('\t\t\tfillOpacity: %f,\n' % settings.get('face_alpha'))
-        f.write('\t\t\tstrokeColor: "%s",\n' % settings.get('edge_color', settings.get('color')))
-        f.write('\t\t\tstrokeOpacity: %f,\n' % settings.get('edge_alpha'))
-        f.write('\t\t\tstrokeWeight: %d,\n' % settings.get('edge_width'))
-        f.write('\t\t\tmap: map,\n')
-        f.write('\t\t\tpaths: [\n')
+    def write_polygon(self, w, path, settings):
+        w.write('new google.maps.Polygon({')
+        w.indent()
+        w.write('clickable: %s,' % str(False).lower())
+        w.write('geodesic: %s,' % str(True).lower())
+        w.write('fillColor: "%s",' % settings.get('face_color', settings.get('color')))
+        w.write('fillOpacity: %f,' % settings.get('face_alpha'))
+        w.write('strokeColor: "%s",' % settings.get('edge_color', settings.get('color')))
+        w.write('strokeOpacity: %f,' % settings.get('edge_alpha'))
+        w.write('strokeWeight: %d,' % settings.get('edge_width'))
+        w.write('map: map,')
+        w.write('paths: [')
+        w.indent()
         for coordinate in path:
-            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], settings.get("precision"))))
-        f.write('\t\t\t]\n')
-        f.write('\t\t});\n')
-        f.write('\n')
+            w.write('%s,' % _format_LatLng(coordinate[0], coordinate[1], settings.get("precision")))
+        w.dedent()
+        w.write(']')
+        w.dedent()
+        w.write('});')
+        w.write()
 
-    def write_heatmap(self, f):
+    def write_heatmap(self, w):
         for heatmap_points, settings_dict, precision in self.heatmap_points:
-            f.write('\t\tnew google.maps.visualization.HeatmapLayer({\n')
-            f.write('\t\t\tthreshold: %d,\n' % settings_dict['threshold'])
-            f.write('\t\t\tradius: %d,\n' % settings_dict['radius'])
-            f.write('\t\t\tmaxIntensity: %d,\n' % settings_dict['maxIntensity'])
-            f.write('\t\t\topacity: %f,\n' % settings_dict['opacity'])
-            f.write('\t\t\tdissipating: %s,\n' % ('true' if settings_dict['dissipating'] else 'false'))
+            w.write('new google.maps.visualization.HeatmapLayer({')
+            w.indent()
+            w.write('threshold: %d,' % settings_dict['threshold'])
+            w.write('radius: %d,' % settings_dict['radius'])
+            w.write('maxIntensity: %d,' % settings_dict['maxIntensity'])
+            w.write('opacity: %f,' % settings_dict['opacity'])
+            w.write('dissipating: %s,' % ('true' if settings_dict['dissipating'] else 'false'))
             if settings_dict['gradient']:
-                f.write('\t\t\tgradient: [\n')
+                w.write('gradient: [')
+                w.indent()
                 for r, g, b, a in settings_dict['gradient']:
-                    f.write('\t\t\t\t"rgba(%d, %d, %d, %d)",\n' % (r, g, b, a))
-                f.write('\t\t\t],\n')
-            f.write('\t\t\tmap: map,\n')
-            f.write('\t\t\tdata: [\n')
+                    w.write('"rgba(%d, %d, %d, %d)",' % (r, g, b, a))
+                w.dedent()
+                w.write('],')
+            w.write('map: map,')
+            w.write('data: [')
+            w.indent()
             for heatmap_lat, heatmap_lng in heatmap_points:
-                f.write('\t\t\t\t%s,\n' % (_format_LatLng(heatmap_lat, heatmap_lng, precision)))
-            f.write('\t\t\t]\n')
-            f.write('\t\t});\n')
-            f.write('\n')
+                w.write('%s,' % _format_LatLng(heatmap_lat, heatmap_lng, precision))
+            w.dedent()
+            w.write(']')
+            w.dedent()
+            w.write('});')
+            w.write()
 
-    def write_ground_overlay(self, f):
+    def write_ground_overlay(self, w):
         for url, bounds_dict, opacity in self.ground_overlays:
-            f.write('\t\tnew google.maps.GroundOverlay(\n')
-            f.write('\t\t\t"%s",\n' % url)
-            f.write('\t\t\t{\n')
+            w.write('''
+                new google.maps.GroundOverlay(
+                    "{url}",
+                    {{
+            '''.format(url=url))
+            w.indent().indent()
             for direction in ['north', 'south', 'east', 'west']:
-                f.write('\t\t\t\t%s: %.4f,\n' % (direction, bounds_dict[direction]))
-            f.write('\t\t\t},\n')
-            f.write('\t\t\t{\n')
-            f.write('\t\t\t\topacity: %f,\n' % opacity)
-            f.write('\t\t\t\tmap: map\n')
-            f.write('\t\t\t}\n')
-            f.write('\t\t);\n')
-            f.write('\n')
+                w.write('%s: %.4f,' % (direction, bounds_dict[direction]))
+            w.dedent().dedent()
+            w.write('''
+                    }},
+                    {{
+                        opacity: {opacity},
+                        map: map
+                    }}
+                );
+            '''.format(opacity=opacity))
 
 if __name__ == "__main__":
     apikey=''

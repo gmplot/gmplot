@@ -1,85 +1,82 @@
 EARTH_RADIUS = 6378.8  # in KM
 
-CIRCLE_MARKER = """\
-\t\tnew google.maps.Circle({{
-\t\t\tstrokeColor: '{strokeColor}',
-\t\t\tstrokeOpacity: {strokeOpacity},
-\t\t\tstrokeWeight: {strokeWeight},
-\t\t\tfillColor: '{fillColor}',
-\t\t\tfillOpacity: {fillOpacity},
-\t\t\tmap: map,
-\t\t\tcenter: new google.maps.LatLng({lat}, {long}),
-\t\t\tradius: {size}
-\t\t}});
-
+CIRCLE_MARKER = """
+new google.maps.Circle({{
+    strokeColor: '{strokeColor}',
+    strokeOpacity: {strokeOpacity},
+    strokeWeight: {strokeWeight},
+    fillColor: '{fillColor}',
+    fillOpacity: {fillOpacity},
+    map: map,
+    center: new google.maps.LatLng({lat}, {long}),
+    radius: {size}
+}});
 """
 
 # FIXME: This generates an X marker in Cartesian frame rather than in lat/long.
-X_MARKER = """\
-\t\tvar lat = {lat};
-\t\tvar long = {long};
-\t\tvar delta = {size}/1000.0/%s/Math.sqrt(2);
-\t\tvar dLat = delta * 180.0/Math.PI; 
-\t\tvar dLon = delta * 180.0/Math.PI / Math.cos(Math.PI*lat/180);
+X_MARKER = """
+var lat = {lat};
+var long = {long};
+var delta = {size}/1000.0/%s/Math.sqrt(2);
+var dLat = delta * 180.0/Math.PI; 
+var dLon = delta * 180.0/Math.PI / Math.cos(Math.PI*lat/180);
 
-\t\tnew google.maps.Polyline({{
-\t\t\tpath: [
-\t\t\t\tnew google.maps.LatLng(lat - dLat, long - dLon),
-\t\t\t\tnew google.maps.LatLng(lat + dLat, long + dLon)
-\t\t\t],
-\t\t\tgeodesic: true,
-\t\t\tstrokeColor: '{strokeColor}',
-\t\t\tstrokeOpacity: {strokeOpacity},
-\t\t\tstrokeWeight: {strokeWeight},
-\t\t\tmap: map
-\t\t}});
+new google.maps.Polyline({{
+    path: [
+        new google.maps.LatLng(lat - dLat, long - dLon),
+        new google.maps.LatLng(lat + dLat, long + dLon)
+    ],
+    geodesic: true,
+    strokeColor: '{strokeColor}',
+    strokeOpacity: {strokeOpacity},
+    strokeWeight: {strokeWeight},
+    map: map
+}});
 
-\t\tnew google.maps.Polyline({{
-\t\t\tpath: [
-\t\t\t\tnew google.maps.LatLng(lat - dLat, long + dLon),
-\t\t\t\tnew google.maps.LatLng(lat + dLat, long - dLon)
-\t\t\t],
-\t\t\tgeodesic: true,
-\t\t\tstrokeColor: '{strokeColor}',
-\t\t\tstrokeOpacity: {strokeOpacity},
-\t\t\tstrokeWeight: {strokeWeight},
-\t\t\tmap: map
-\t\t}});
-
+new google.maps.Polyline({{
+    path: [
+        new google.maps.LatLng(lat - dLat, long + dLon),
+        new google.maps.LatLng(lat + dLat, long - dLon)
+    ],
+    geodesic: true,
+    strokeColor: '{strokeColor}',
+    strokeOpacity: {strokeOpacity},
+    strokeWeight: {strokeWeight},
+    map: map
+}});
 """ % EARTH_RADIUS
 
 # FIXME: This generates a plus marker in Cartesian frame rather than in lat/long.
-PLUS_MARKER = """\
-\t\tvar lat = {lat};
-\t\tvar long = {long};
-\t\tvar delta = {size}/1000.0/%s;
-\t\tvar dLat = delta * 180.0/Math.PI; 
-\t\tvar dLon = delta * 180.0/Math.PI / Math.cos(Math.PI*lat/180);
+PLUS_MARKER = """
+var lat = {lat};
+var long = {long};
+var delta = {size}/1000.0/%s;
+var dLat = delta * 180.0/Math.PI; 
+var dLon = delta * 180.0/Math.PI / Math.cos(Math.PI*lat/180);
 
-\t\tnew google.maps.Polyline({{
-\t\t\tpath: [
-\t\t\t\tnew google.maps.LatLng(lat, long - dLon),
-\t\t\t\tnew google.maps.LatLng(lat, long + dLon)
-\t\t\t],
-\t\t\tgeodesic: true,
-\t\t\tstrokeColor: '{strokeColor}',
-\t\t\tstrokeOpacity: {strokeOpacity},
-\t\t\tstrokeWeight: {strokeWeight},
-\t\t\tmap: map
-\t\t}});
+new google.maps.Polyline({{
+    path: [
+        new google.maps.LatLng(lat, long - dLon),
+        new google.maps.LatLng(lat, long + dLon)
+    ],
+    geodesic: true,
+    strokeColor: '{strokeColor}',
+    strokeOpacity: {strokeOpacity},
+    strokeWeight: {strokeWeight},
+    map: map
+}});
 
-\t\tnew google.maps.Polyline({{
-\t\t\tpath: [
-\t\t\t\tnew google.maps.LatLng(lat - dLat, long),
-\t\t\t\tnew google.maps.LatLng(lat + dLat, long)
-\t\t\t],
-\t\t\tgeodesic: true,
-\t\t\tstrokeColor: '{strokeColor}',
-\t\t\tstrokeOpacity: {strokeOpacity},
-\t\t\tstrokeWeight: {strokeWeight},
-\t\t\tmap: map
-\t\t}});
-
+new google.maps.Polyline({{
+    path: [
+        new google.maps.LatLng(lat - dLat, long),
+        new google.maps.LatLng(lat + dLat, long)
+    ],
+    geodesic: true,
+    strokeColor: '{strokeColor}',
+    strokeOpacity: {strokeOpacity},
+    strokeWeight: {strokeWeight},
+    map: map
+}});
 """ % EARTH_RADIUS
 
 SYMBOLS = {
