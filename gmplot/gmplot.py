@@ -13,6 +13,7 @@ from gmplot.color_dicts import mpl_color_map, html_color_codes
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
+# TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
 
 class InvalidSymbolError(Exception):
     pass
@@ -39,7 +40,6 @@ class GoogleMapPlotter(object):
         self.paths = []
         self.shapes = []
         self.points = []
-        self.circles = []
         self.symbols = []
         self.heatmap_points = []
         self.ground_overlays = []
@@ -97,12 +97,7 @@ class GoogleMapPlotter(object):
         self.symbols.append((symbol, settings))
 
     def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
-        color = color or c
-        kwargs.setdefault('face_alpha', 0.5)
-        kwargs.setdefault('face_color', "#000000")
-        kwargs.setdefault("color", color)
-        settings = self._process_kwargs(kwargs)
-        self.circles.append(((lat, lng, radius), settings))
+        self._add_symbol(Symbol('o', lat, lng, radius), color, c, **kwargs)
 
     def _process_kwargs(self, kwargs):
         settings = dict()
@@ -228,7 +223,6 @@ class GoogleMapPlotter(object):
         self.write_grids(f)
         self.write_points(f)
         self.write_paths(f)
-        self.write_circles(f)
         self.write_symbols(f)
         self.write_shapes(f)
         self.write_heatmap(f)
@@ -247,6 +241,8 @@ class GoogleMapPlotter(object):
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
     #############################################
+
+    # TODO: Prepend a single underscore to the following functions to make them non-public (counts as an API change).
 
     def write_grids(self, f):
         if self.gridsetting is None:
@@ -280,9 +276,10 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(f, point[0], point[1], point[2], point[3], point[4], color_cache)
 
-    def write_circles(self, f):
-        for circle, settings in self.circles:
-            self.write_circle(f, circle[0], circle[1], circle[2], settings)
+    def write_circles(self, f): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+        for symbol, settings in self.symbols:
+            if symbol.symbol == 'o':
+                self.write_symbol(f, symbol, settings)
 
     def write_symbols(self, f):
         for symbol, settings in self.symbols:
@@ -342,17 +339,8 @@ class GoogleMapPlotter(object):
             fillOpacity=settings.get('face_alpha')
         ))
 
-    def write_circle(self, f, lat, long, size, settings):
-        f.write(CIRCLE_MARKER.format(
-            lat=lat,
-            long=long,
-            size=size,
-            strokeColor=settings.get('color', settings.get('edge_color')),
-            strokeOpacity=settings.get('edge_alpha'),
-            strokeWeight=settings.get('edge_width'),
-            fillColor=settings.get('face_color'),
-            fillOpacity=settings.get('face_alpha')
-        ))
+    def write_circle(self, f, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+        self.write_symbol(f, Symbol('o', lat, long, size), settings)
 
     def write_polyline(self, f, path, settings):
         f.write('\t\tnew google.maps.Polyline({\n')
