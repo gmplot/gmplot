@@ -326,74 +326,62 @@ class GoogleMapPlotter(object):
         f.write('\n')
 
     def write_symbol(self, f, symbol, settings):
-        strokeColor = settings.get('color') or settings.get('edge_color')
-        strokeOpacity = settings.get('edge_alpha')
-        strokeWeight = settings.get('edge_width')
-        fillColor = settings.get('face_color')
-        fillOpacity = settings.get('face_alpha')
         try:
             template = SYMBOLS[symbol.symbol]
         except KeyError:
             raise InvalidSymbolError("Symbol %s is not implemented" % symbol.symbol)
 
-        f.write(template.format(lat=symbol.lat, long=symbol.long, size=symbol.size, strokeColor=strokeColor,
-                                strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
-                                fillColor=fillColor, fillOpacity=fillOpacity))
+        f.write(template.format(
+            lat=symbol.lat,
+            long=symbol.long,
+            size=symbol.size,
+            strokeColor=settings.get('color', settings.get('edge_color')),
+            strokeOpacity=settings.get('edge_alpha'),
+            strokeWeight=settings.get('edge_width'),
+            fillColor=settings.get('face_color'),
+            fillOpacity=settings.get('face_alpha')
+        ))
 
     def write_circle(self, f, lat, long, size, settings):
-        strokeColor = settings.get('color') or settings.get('edge_color')
-        strokeOpacity = settings.get('edge_alpha')
-        strokeWeight = settings.get('edge_width')
-        fillColor = settings.get('face_color')
-        fillOpacity = settings.get('face_alpha')
-        f.write(CIRCLE_MARKER.format(lat=lat, long=long, size=size, strokeColor=strokeColor,
-                                     strokeOpacity=strokeOpacity, strokeWeight=strokeWeight,
-                                     fillColor=fillColor, fillOpacity=fillOpacity))
+        f.write(CIRCLE_MARKER.format(
+            lat=lat,
+            long=long,
+            size=size,
+            strokeColor=settings.get('color', settings.get('edge_color')),
+            strokeOpacity=settings.get('edge_alpha'),
+            strokeWeight=settings.get('edge_width'),
+            fillColor=settings.get('face_color'),
+            fillOpacity=settings.get('face_alpha')
+        ))
 
     def write_polyline(self, f, path, settings):
-        clickable = False
-        geodesic = True
-        strokeColor = settings.get('color') or settings.get('edge_color')
-        strokeOpacity = settings.get('edge_alpha')
-        strokeWeight = settings.get('edge_width')
-        precision = settings.get("precision")
-
         f.write('\t\tnew google.maps.Polyline({\n')
-        f.write('\t\t\tclickable: %s,\n' % (str(clickable).lower()))
-        f.write('\t\t\tgeodesic: %s,\n' % (str(geodesic).lower()))
-        f.write('\t\t\tstrokeColor: "%s",\n' % (strokeColor))
-        f.write('\t\t\tstrokeOpacity: %f,\n' % (strokeOpacity))
-        f.write('\t\t\tstrokeWeight: %d,\n' % (strokeWeight))
+        f.write('\t\t\tclickable: %s,\n' % (str(False).lower()))
+        f.write('\t\t\tgeodesic: %s,\n' % (str(True).lower()))
+        f.write('\t\t\tstrokeColor: "%s",\n' % settings.get('color', settings.get('edge_color')))
+        f.write('\t\t\tstrokeOpacity: %f,\n' % settings.get('edge_alpha'))
+        f.write('\t\t\tstrokeWeight: %d,\n' % settings.get('edge_width'))
         f.write('\t\t\tmap: map,\n')
         f.write('\t\t\tpath: [\n')
         for coordinate in path:
-            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision)))
+            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], settings.get("precision"))))
         f.write('\t\t\t]\n')
         f.write('\t\t});\n')
         f.write('\n')
 
     def write_polygon(self, f, path, settings):
-        clickable = False
-        geodesic = True
-        strokeColor = settings.get('edge_color') or settings.get('color')
-        strokeOpacity = settings.get('edge_alpha')
-        strokeWeight = settings.get('edge_width')
-        fillColor = settings.get('face_color') or settings.get('color')
-        fillOpacity= settings.get('face_alpha')
-        precision = settings.get("precision")
-
         f.write('\t\tnew google.maps.Polygon({\n')
-        f.write('\t\t\tclickable: %s,\n' % (str(clickable).lower()))
-        f.write('\t\t\tgeodesic: %s,\n' % (str(geodesic).lower()))
-        f.write('\t\t\tfillColor: "%s",\n' % (fillColor))
-        f.write('\t\t\tfillOpacity: %f,\n' % (fillOpacity))
-        f.write('\t\t\tstrokeColor: "%s",\n' % (strokeColor))
-        f.write('\t\t\tstrokeOpacity: %f,\n' % (strokeOpacity))
-        f.write('\t\t\tstrokeWeight: %d,\n' % (strokeWeight))
+        f.write('\t\t\tclickable: %s,\n' % (str(False).lower()))
+        f.write('\t\t\tgeodesic: %s,\n' % (str(True).lower()))
+        f.write('\t\t\tfillColor: "%s",\n' % settings.get('face_color', settings.get('color')))
+        f.write('\t\t\tfillOpacity: %f,\n' % settings.get('face_alpha'))
+        f.write('\t\t\tstrokeColor: "%s",\n' % settings.get('edge_color', settings.get('color')))
+        f.write('\t\t\tstrokeOpacity: %f,\n' % settings.get('edge_alpha'))
+        f.write('\t\t\tstrokeWeight: %d,\n' % settings.get('edge_width'))
         f.write('\t\t\tmap: map,\n')
         f.write('\t\t\tpaths: [\n')
         for coordinate in path:
-            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], precision)))
+            f.write('\t\t\t\t%s,\n' % (_format_LatLng(coordinate[0], coordinate[1], settings.get("precision"))))
         f.write('\t\t\t]\n')
         f.write('\t\t});\n')
         f.write('\n')
