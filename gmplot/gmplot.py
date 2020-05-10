@@ -11,7 +11,7 @@ from collections import namedtuple
 
 from gmplot.color_dicts import mpl_color_map, html_color_codes
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
-from gmplot.writer import _FileWriter
+from gmplot.writer import _FileWriter, _StringWriter
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
 # TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
@@ -149,14 +149,14 @@ class GoogleMapPlotter(object):
         self.paths.append((path, settings))
 
     def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6):
-        """
+        '''
         :param lats: list of latitudes
         :param lngs: list of longitudes
         :param maxIntensity:(int) max frequency to use when plotting. Default (None) uses max value on map domain.
         :param threshold:
         :param radius: The hardest param. Example (string):
         :return:
-        """
+        '''
 
         # Try to give anyone using threshold a heads up.
         if threshold is not None:
@@ -204,48 +204,64 @@ class GoogleMapPlotter(object):
         self.shapes.append((shape, settings))
 
     def draw(self, file):
-        """
-        Create the HTML file which includes one Google Map and all elements to be rendered.
+        '''
+        Create the HTML file (which includes one Google Map and all elements to be rendered).
 
         :param file: File to write to, as a file path.
-        """
+        '''
 
         with _FileWriter(file) as w:
-            w.write('''
-                <html>
-                <head>
-                <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-                <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-                <title>{title}</title>
-                <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization{key}"></script>
-                <script type="text/javascript">
-            '''.format(title=self.title, key=('&key=%s' % self.apikey if self.apikey else '')))
-            w.indent()
-            w.write('function initialize() {')
-            w.indent()
-            self.write_map(w)
-            self.write_grids(w)
-            self.write_points(w)
-            self.write_paths(w)
-            self.write_symbols(w)
-            self.write_shapes(w)
-            self.write_heatmap(w)
-            self.write_ground_overlay(w)
-            w.dedent()
-            w.write('}')
-            w.dedent()
-            w.write('''
-                </script>
-                </head>
-                <body style="margin:0px; padding:0px;" onload="initialize()">
-                    <div id="map_canvas" style="width: 100%; height: 100%;" />
-                </body>
-                </html>
-            ''')
+            self._write_html(w)
+
+    def get(self):
+        '''Return the HTML map as a string (which includes one Google Map and all elements to be rendered).'''
+
+        w = _StringWriter()
+        self._write_html(w)
+        return w.get()
 
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
     #############################################
+
+    def _write_html(self, w):
+        '''
+        Write the HTML map.
+
+        :param w: Writer used to write the HTML map.
+        '''
+
+        w.write('''
+            <html>
+            <head>
+            <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+            <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+            <title>{title}</title>
+            <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization{key}"></script>
+            <script type="text/javascript">
+        '''.format(title=self.title, key=('&key=%s' % self.apikey if self.apikey else '')))
+        w.indent()
+        w.write('function initialize() {')
+        w.indent()
+        self.write_map(w)
+        self.write_grids(w)
+        self.write_points(w)
+        self.write_paths(w)
+        self.write_symbols(w)
+        self.write_shapes(w)
+        self.write_heatmap(w)
+        self.write_ground_overlay(w)
+        w.dedent()
+        w.write('}')
+        w.dedent()
+        w.write('''
+            </script>
+            </head>
+            <body style="margin:0px; padding:0px;" onload="initialize()">
+                <div id="map_canvas" style="width: 100%; height: 100%;" />
+            </body>
+            </html>
+        ''')
 
     # TODO: Prepend a single underscore to the following functions to make them non-public (counts as an API change).
 
