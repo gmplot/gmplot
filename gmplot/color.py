@@ -171,7 +171,7 @@ def is_valid_hex_color(color):
     :return: True if the given color is a valid hex color, False otherwise.
     """
 
-    return isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color)
+    return bool(isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color))
 
 def get_hex_color_code(color):
     """
