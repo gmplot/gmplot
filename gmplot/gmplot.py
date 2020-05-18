@@ -123,6 +123,9 @@ class GoogleMapPlotter(object):
         """
         settings = dict()
 
+        # Remove all kwargs values of None (since they'll slip through the fallback lines below):
+        kwargs = {key:value for key, value in kwargs.items() if value is not None}
+
         settings["edge_color"] = kwargs.get("color",
                                  kwargs.get("edge_color",
                                  kwargs.get("ec", "#000000")))
