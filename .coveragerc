@@ -1,0 +1,7 @@
+[run]
+source = gmplot
+omit = *__init__.py
+branch = True
+
+[html]
+directory = coverage-html
