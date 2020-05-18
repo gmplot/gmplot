@@ -18,8 +18,7 @@ class TestMarkers(unittest.TestCase):
     def test_marker_writes(self):
         self.gmap.marker(1, 11)
         self.gmap.marker(2, 22)
-        self.gmap.draw('/tmp/DEL.html')
-
+        map_html = self.gmap.get()
 
 if __name__ == '__main__':
     unittest.main()
