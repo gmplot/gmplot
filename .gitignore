@@ -5,3 +5,7 @@
 mymap.html
 dist
 gmplot.egg-info
+
+# Ignore coverage-related files:
+.coverage
+coverage-html

@@ -5,4 +5,4 @@ all:
 	@echo 'Nothing to make. Only "make test" works.'
 
 test:
-	python -m unittest discover -v
+	coverage run -m unittest discover -v
