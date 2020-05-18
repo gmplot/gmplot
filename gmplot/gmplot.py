@@ -330,7 +330,9 @@ class GoogleMapPlotter(object):
 
         # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
         if color not in color_cache:
-            base64_icon = base64.b64encode(open(self.coloricon % color, 'rb').read()).decode()
+            with open(self.coloricon % color, 'rb') as f:
+                base64_icon = base64.b64encode(f.read()).decode()
+
             w.write('var %s = new google.maps.MarkerImage("data:image/png;base64,%s");' % (marker_name, base64_icon))
             w.write()
             color_cache.add(color)
