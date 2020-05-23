@@ -495,6 +495,7 @@ class GoogleMapPlotter(object):
                     }}
                 );
             '''.format(opacity=opacity))
+            w.write()
 
 if __name__ == "__main__":
     apikey=''
