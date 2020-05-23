@@ -11,7 +11,8 @@ from collections import namedtuple, Iterable
 
 from gmplot.color import get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
-from gmplot.writer import _FileWriter, _StringWriter
+from gmplot.utility import StringIO
+from gmplot.writer import _Writer
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
 # TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
@@ -236,15 +237,17 @@ class GoogleMapPlotter(object):
         :param file: File to write to, as a file path.
         '''
 
-        with _FileWriter(file) as w:
-            self._write_html(w)
+        with open(file, 'w') as f:
+            with _Writer(f) as w:
+                self._write_html(w)
 
     def get(self):
         '''Return the HTML map as a string (which includes one Google Map and all elements to be rendered).'''
 
-        w = _StringWriter()
-        self._write_html(w)
-        return w.get()
+        with StringIO() as f:
+            with _Writer(f) as w:
+                self._write_html(w)
+            return f.getvalue()
 
     #############################################
     # # # # # # Low level Map Drawing # # # # # #
