@@ -9,7 +9,7 @@ import base64
 
 from collections import namedtuple, Iterable
 
-from gmplot.color import get_hex_color_code
+from gmplot.color import _get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
 from gmplot.utility import StringIO
 from gmplot.writer import _Writer
@@ -73,7 +73,7 @@ class GoogleMapPlotter(object):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6):
-        self.points.append((lat, lng, get_hex_color_code(c or color), title, precision))
+        self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         """
@@ -153,7 +153,7 @@ class GoogleMapPlotter(object):
 
         for key, color in settings.items():
             if 'color' in key:
-                settings[key] = get_hex_color_code(color)
+                settings[key] = _get_hex_color_code(color)
 
         settings["closed"] = kwargs.get("closed", None)
         return settings

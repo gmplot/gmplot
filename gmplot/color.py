@@ -163,7 +163,7 @@ _HTML_COLOR_CODES = {
     'yellowgreen':          '#9ACD32'
 }
 
-def is_valid_hex_color(color):
+def _is_valid_hex_color(color):
     """
     Return whether or not a given color is a valid hex color.
 
@@ -173,7 +173,7 @@ def is_valid_hex_color(color):
 
     return bool(isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color))
 
-def get_hex_color_code(color):
+def _get_hex_color_code(color):
     """
     Return the hex color code for a given color.
 
@@ -181,7 +181,7 @@ def get_hex_color_code(color):
     :return: Hex color code for the given color.
     """
 
-    if not is_valid_hex_color(color):
+    if not _is_valid_hex_color(color):
         color = _MATPLOTLIB_COLOR_MAP.get(color, color)
 
         if color in _HTML_COLOR_CODES:
