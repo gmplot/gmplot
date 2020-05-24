@@ -326,7 +326,7 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache)
 
-    def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+    def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
         for symbol, settings in self.symbols:
             if symbol.symbol == 'o':
                 self.write_symbol(w, symbol, settings)
@@ -402,7 +402,7 @@ class GoogleMapPlotter(object):
         ))
         w.write()
 
-    def write_circle(self, w, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function).
+    def write_circle(self, w, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
         self.write_symbol(w, Symbol('o', lat, long, size), settings)
 
     def write_polyline(self, w, path, settings):
@@ -497,7 +497,7 @@ class GoogleMapPlotter(object):
             '''.format(opacity=opacity))
             w.write()
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
     mymap = GoogleMapPlotter(37.428, -122.145, 16, apikey)
