@@ -72,8 +72,8 @@ class GoogleMapPlotter(object):
     def grid(self, slat, elat, latin, slng, elng, lngin):
         self.gridsetting = [slat, elat, latin, slng, elng, lngin]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6):
-        self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision))
+    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None):
+        self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision, label))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         """
@@ -324,7 +324,7 @@ class GoogleMapPlotter(object):
     def write_points(self, w):
         color_cache = set()
         for point in self.points:
-            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache)
+            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5])
 
     def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
         for symbol, settings in self.symbols:
@@ -354,8 +354,8 @@ class GoogleMapPlotter(object):
         w.write('});')
         w.write()
 
-    def write_point(self, w, lat, lng, color, title, precision, color_cache):
-        marker_name = 'marker_%s' % color[1:]
+    def write_point(self, w, lat, lng, color, title, precision, color_cache, label): # TODO: Bundle args into some Point or Marker class (counts as an API change).
+        marker_icon = 'marker_%s' % color[1:]
 
         get_marker_icon_path = lambda color: self.coloricon % color[1:]
         marker_icon_path = get_marker_icon_path(color)
@@ -369,7 +369,12 @@ class GoogleMapPlotter(object):
             with open(marker_icon_path, 'rb') as f:
                 base64_icon = base64.b64encode(f.read()).decode()
 
-            w.write('var %s = new google.maps.MarkerImage("data:image/png;base64,%s");' % (marker_name, base64_icon))
+            w.write('var %s = {' % marker_icon)
+            w.indent()
+            w.write('url: "data:image/png;base64,%s",' % base64_icon)
+            w.write('labelOrigin: new google.maps.Point(10, 11)') # TODO: Avoid hardcoded label origin.
+            w.dedent()
+            w.write('};')
             w.write()
             color_cache.add(color)
 
@@ -377,7 +382,9 @@ class GoogleMapPlotter(object):
         w.indent()
         if title is not None:
             w.write('title: "%s",' % title)
-        w.write('icon: %s,' % marker_name)
+        if label is not None:
+            w.write('label: "%s",' % label)
+        w.write('icon: %s,' % marker_icon)
         w.write('position: %s,' % _format_LatLng(lat, lng, precision))
         w.write('map: map')
         w.dedent()
