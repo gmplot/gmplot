@@ -104,16 +104,16 @@ class GoogleMapPlotter(object):
             else:
                 self._add_symbol(Symbol(symbol, lat, lng, symbol_size), **settings)
 
-    def _add_symbol(self, symbol, color=None, c=None, **kwargs):
+    def _add_symbol(self, symbol, color=None, c=None, alpha=0.5, **kwargs):
         color = color or c
-        kwargs.setdefault('face_alpha', 0.5)
+        kwargs.setdefault('face_alpha', alpha)
         kwargs.setdefault('face_color', "#000000")
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
         self.symbols.append((symbol, settings))
 
-    def circle(self, lat, lng, radius, color=None, c=None, **kwargs):
-        self._add_symbol(Symbol('o', lat, lng, radius), color, c, **kwargs)
+    def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
+        self._add_symbol(Symbol('o', lat, lng, radius), color, c, alpha, **kwargs)
 
     def _process_kwargs(self, kwargs):
         """
