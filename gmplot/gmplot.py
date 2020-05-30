@@ -32,6 +32,50 @@ def safe_iter(var):
 def _format_LatLng(lat, lng, precision=6):
     return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lng)
 
+class _Route(object):
+    '''More info: https://developers.google.com/maps/documentation/javascript/directions'''
+    
+    def __init__(self, origin, destination, **kwargs):
+        '''
+        :param origin: Origin, as a latitude/longitude tuple.
+        :param destination: Destination, as a latitude/longitude tuple.
+        :param travel_mode: (optional) Travel mode, as an uppercase string. Defaults to 'DRIVING'.
+        :param waypoints: (optional) Waypoints, as a list of latitude/longitude tuples.
+        '''
+        self.origin = origin
+        self.destination = destination
+        self.travel_mode = kwargs.get('travel_mode', 'DRIVING').upper()
+        self.waypoints = kwargs.get('waypoints', [])
+
+    def write(self, w):
+        '''
+        Write the route.
+
+        :param w: Writer used to write the route.
+        '''
+
+        w.write('new google.maps.DirectionsService().route({')
+        w.indent()
+        w.write('origin: %s,' % _format_LatLng(*self.origin))
+        w.write('destination: %s,' % _format_LatLng(*self.destination))
+        if self.waypoints:
+            w.write('waypoints: [')
+            w.indent()
+            for waypoint in self.waypoints:
+                w.write('{location: %s, stopover: false},' % _format_LatLng(*waypoint))
+            w.dedent()
+            w.write('],')
+        w.write('travelMode: "%s"' % self.travel_mode)
+        w.dedent()
+        w.write('''  
+            }, function(response, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    new google.maps.DirectionsRenderer({map: map}).setDirections(response);
+                }
+            });
+        ''')
+        w.write()
+
 class GoogleMapPlotter(object):
     _HEATMAP_DEFAULT_WEIGHT = 1
 
@@ -52,6 +96,7 @@ class GoogleMapPlotter(object):
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.title = 'Google Maps - gmplot'
+        self._routes = []
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -74,6 +119,19 @@ class GoogleMapPlotter(object):
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None):
         self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision, label))
+
+    def directions(self, origin, destination, **kwargs):
+        '''
+        Display directions from an origin to a destination.
+
+        :param origin: Origin, as a latitude/longitude tuple.
+        :param destination: Destination, as a latitude/longitude tuple.
+        :param travel_mode: (optional) Travel mode, as an uppercase string. Defaults to 'DRIVING'.
+        :param waypoints: (optional) Waypoints, as a list of latitude/longitude tuples.
+
+        More info: https://developers.google.com/maps/documentation/javascript/directions
+        '''
+        self._routes.append(_Route(origin, destination, **kwargs))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         """
@@ -280,6 +338,7 @@ class GoogleMapPlotter(object):
         self.write_shapes(w)
         self.write_heatmap(w)
         self.write_ground_overlay(w)
+        [route.write(w) for route in self._routes]
         w.dedent()
         w.write('}')
         w.dedent()
