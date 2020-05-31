@@ -1,12 +1,31 @@
 import unittest
 import warnings
-from gmplot.gmplot import _format_LatLng, GoogleMapPlotter, InvalidSymbolError
+from gmplot.utility import StringIO
+from gmplot.writer import _Writer
+from gmplot.gmplot import _format_LatLng, _Route, GoogleMapPlotter, InvalidSymbolError
 
 class GMPlotTest(unittest.TestCase):
     def test_format_LatLng(self):
         self.assertEqual(_format_LatLng(45.123456, -80.987654), 'new google.maps.LatLng(45.123456, -80.987654)')
         self.assertEqual(_format_LatLng(45.123456, -80.987654, 4), 'new google.maps.LatLng(45.1235, -80.9877)')
         self.assertEqual(_format_LatLng(45.1, -80.9, 3), 'new google.maps.LatLng(45.100, -80.900)')
+
+# Note: This test only ensures that Route's functions can be called without failing,
+#       it doesn't test if the resulting output can actually be rendered properly in a browser.
+class RouteTest(unittest.TestCase):
+    def test_write(self):
+        route = _Route((37.770776,-122.461689), (37.780776,-122.461689))
+
+        with StringIO() as f:
+            with _Writer(f) as writer:
+                route.write(writer)
+
+    def test_write_waypoints(self):
+        route = _Route((37.770776,-122.461689), (37.780776,-122.461689), waypoints=[(37.431257,-122.133121)])
+
+        with StringIO() as f:
+            with _Writer(f) as writer:
+                route.write(writer)
 
 # Note: This test only ensures that GoogleMapPlotter's functions can be called without failing,
 #       it doesn't test if the resulting map can actually be rendered properly in a browser.
@@ -25,6 +44,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
         map.marker(37.427, -122.145, "yellow")
         map.marker(37.428, -122.146, "cornflowerblue")
         map.marker(37.429, -122.144, "k", title='Here')
+        map.marker(37.430, -122.142, "red", label='A')
 
         # Test circle:
         map.circle(37.429, -122.145, 100, "#FF0000", ew=2)
@@ -32,6 +52,9 @@ class GoogleMapPlotterTest(unittest.TestCase):
         # Test plot:
         map.plot(self.PATH_1[0], self.PATH_1[1], "plum", edge_width=10)
         map.plot(self.PATH_2[0], self.PATH_2[1], "red")
+
+        # Test directions:
+        map.directions((37.770776,-122.461689), (37.780776,-122.461689), waypoints=[(37.431257,-122.133121)])
 
         # Test polygon:
         map.polygon(self.PATH_3[0], self.PATH_3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
