@@ -98,8 +98,9 @@ For further customization, you can pass in a `map styles
             ]
         }
     ]
-
-    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_styles=map_styles)
+    
+    apikey = '' # (a valid API key is needed to customize map styles)
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey, map_styles=map_styles)
 
 Misc.
 -----
