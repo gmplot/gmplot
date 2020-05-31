@@ -80,6 +80,19 @@ class GoogleMapPlotter(object):
     _HEATMAP_DEFAULT_WEIGHT = 1
 
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey='', **kwargs):
+        '''
+        :param center_lat: Latitude of the center of the map.
+        :param center_lng: Longitude of the center of the map.
+        :param zoom: Zoom level, where 0 is fully zoomed out. More info:
+            https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
+        :param map_type: (optional) Map type, as documented here:
+            https://developers.google.com/maps/documentation/javascript/maptypes
+        :param apikey: (optional) Google Maps API key.
+        :param title: (optional) Title of the HTML file.
+        :param map_styles: (optional) Map styles, as documented here:
+            https://developers.google.com/maps/documentation/javascript/style-reference
+        '''
+
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
         self.center = (float(center_lat), float(center_lng))
         self.zoom = int(zoom)
@@ -95,7 +108,7 @@ class GoogleMapPlotter(object):
         self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        self.title = 'Google Maps - gmplot'
+        self.title = kwargs.get('title', 'Google Maps - gmplot')
         self._routes = []
         self._map_styles = kwargs.get('map_styles', [])
 
