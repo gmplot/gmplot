@@ -91,6 +91,10 @@ class GoogleMapPlotter(object):
         :param title: (optional) Title of the HTML file.
         :param map_styles: (optional) Map styles, as documented here:
             https://developers.google.com/maps/documentation/javascript/style-reference
+        :param tilt: (optional) Tilt of the map upon zooming in:
+            https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.tilt
+        :param scale_control: (optional) Whether or not to display the Scale control:
+            https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.scaleControl
         '''
 
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
@@ -111,6 +115,8 @@ class GoogleMapPlotter(object):
         self.title = kwargs.get('title', 'Google Maps - gmplot')
         self._routes = []
         self._map_styles = kwargs.get('map_styles', [])
+        self._tilt = kwargs.get('tilt') 
+        self._scale_control = kwargs.get('scale_control', False)
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -423,6 +429,10 @@ class GoogleMapPlotter(object):
             w.write('styles: %s,' % json.dumps(self._map_styles, indent=4)) # TODO: Indent size defined elsewhere too; consolidate as a single constant.
         if self.map_type:
             w.write('mapTypeId: "%s",' % self.map_type.lower())
+        if self._tilt is not None:
+            w.write('tilt: %d,' % self._tilt)
+        if self._scale_control:
+            w.write('scaleControl: true,')
         w.write('zoom: %d,' % self.zoom)
         w.write('center: %s' % _format_LatLng(self.center[0], self.center[1]))
         w.dedent()
