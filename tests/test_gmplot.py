@@ -93,10 +93,6 @@ class GoogleMapPlotterTest(unittest.TestCase):
         map.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
         map.get()
 
-    def test_map_type(self):
-        map = GoogleMapPlotter(37.428, -122.145, 16, 'satellite')
-        map.get()
-
     def test_map_styles(self):
         map_styles = [
             {
@@ -108,7 +104,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
             }
         ]
 
-        map = GoogleMapPlotter(37.428, -122.145, 16, map_styles=map_styles)
+        map = GoogleMapPlotter(37.428, -122.145, 16, map_type='satellite', map_styles=map_styles, tilt=0, scale_control=True)
         map.get()
 
     def test_unsupported_marker_color(self):
