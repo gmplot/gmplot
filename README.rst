@@ -11,7 +11,8 @@ make creating exploratory map views effortless. Here's a crash course:
     from gmplot import gmplot
 
     # Place map
-    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
+    apikey = '' # (your API key goes here)
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
 
     # Polygon
     golden_gate_park_lats, golden_gate_park_lons = zip(*[
@@ -46,6 +47,8 @@ make creating exploratory map views effortless. Here's a crash course:
 
     # Draw
     gmap.draw("my_map.html")
+
+You can get your Google Maps API key on the `Google developers site <https://developers.google.com/maps/documentation/javascript/get-api-key>`_.
 
 .. image:: https://imgur.com/C6dnec8.png
 
