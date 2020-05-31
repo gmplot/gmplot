@@ -6,6 +6,10 @@ __version__ = '1.2.0'
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def get_requirements(requirements_file):
+    with open(requirements_file) as f:
+        return f.read().strip().splitlines()
+
 setup(
     name = 'gmplot',
     version = __version__,
@@ -21,5 +25,5 @@ setup(
     package_data = {
         'gmplot': ['markers/*.png'],
     },
-    install_requires=['requests'],
+    install_requires=get_requirements('requirements.txt'),
 )

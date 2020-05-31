@@ -6,20 +6,51 @@ interface to generate the HTML and javascript to render all the
 data you'd like on top of Google Maps. Several plotting methods
 make creating exploratory map views effortless. Here's a crash course:
 
-::
+.. code:: python
 
-    import gmplot
+    from gmplot import gmplot
 
-    gmap = gmplot.GoogleMapPlotter(37.428, -122.145, 16, apikey=YOUR_GOOGLE_API_KEY)
+    # Place map
+    apikey = '' # (your API key goes here)
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
 
-    gmap.plot(latitudes, longitudes, 'cornflowerblue', edge_width=10)
-    gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
-    gmap.scatter(marker_lats, marker_lngs, 'k', marker=True)
-    gmap.heatmap(heat_lats, heat_lngs)
+    # Polygon
+    golden_gate_park_lats, golden_gate_park_lons = zip(*[
+        (37.771269, -122.511015),
+        (37.773495, -122.464830),
+        (37.774797, -122.454538),
+        (37.771988, -122.454018),
+        (37.773646, -122.440979),
+        (37.772742, -122.440797),
+        (37.771096, -122.453889),
+        (37.768669, -122.453518),
+        (37.766227, -122.460213),
+        (37.764028, -122.510347),
+        (37.771269, -122.511015)
+        ])
+    gmap.plot(golden_gate_park_lats, golden_gate_park_lons, 'cornflowerblue', edge_width=10)
 
-    gmap.draw("mymap.html")
+    # Scatter points
+    top_attraction_lats, top_attraction_lons = zip(*[
+        (37.769901, -122.498331),
+        (37.768645, -122.475328),
+        (37.771478, -122.468677),
+        (37.769867, -122.466102),
+        (37.767187, -122.467496),
+        (37.770104, -122.470436)
+        ])
+    gmap.scatter(top_attraction_lats, top_attraction_lons, '#3B0B39', size=40, marker=False)
 
-You can get your google api key on the `google developers site <https://developers.google.com/maps/documentation/javascript/get-api-key>`_.
+    # Marker
+    hidden_gem_lat, hidden_gem_lon = 37.770776, -122.461689
+    gmap.marker(hidden_gem_lat, hidden_gem_lon, 'cornflowerblue')
+
+    # Draw
+    gmap.draw("my_map.html")
+
+You can get your Google Maps API key on the `Google developers site <https://developers.google.com/maps/documentation/javascript/get-api-key>`_.
+
+.. image:: https://imgur.com/C6dnec8.png
 
 Geocoding
 ---------
@@ -27,22 +58,52 @@ Geocoding
 ``gmplot`` contains a simple wrapper around Google's geocoding service enabling
 map initilization to the location of your choice. Rather than providing latitude,
 longitude, and zoom level during initialization, grab your gmplot instance with
-a location:
+a location and a valid Google Maps API key:
 
-::
+.. code:: python
 
-    gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco")
+    apikey = '' # (your API key goes here)
+    gmap = gmplot.GoogleMapPlotter.from_geocode("San Francisco", apikey)
 
 Plot types
 ----------
 
-* Polygons with fills.
-* Drop pins.
-* Scatter points.
-* Grid lines.
-* Heatmaps.
+* Polygons with fills - ``plot``
+* Drop pins. - ``marker``
+* Scatter points. - ``scatter``
+* Grid lines. - ``grid``
+* Heatmaps. - ``heatmap``
 
 .. image:: http://i.imgur.com/dTNkbZ7.png
+
+Map styling
+-----------
+
+Passing in one of the supported `map types
+<https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes>`_
+for the optional ``map_type`` parameter allows you to quickly change the look of your map:
+
+.. code:: python
+
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, map_type='satellite')
+
+For further customization, you can pass in a `map styles
+<https://developers.google.com/maps/documentation/javascript/styling>`_ object:
+
+.. code:: python
+
+    map_styles = [
+        {
+            'featureType': 'all',
+            'stylers': [
+                {'saturation': -80},
+                {'lightness': 60},
+            ]
+        }
+    ]
+    
+    apikey = '' # (a valid API key is needed to customize map styles)
+    gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey, map_styles=map_styles)
 
 Misc.
 -----
