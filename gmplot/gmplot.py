@@ -95,6 +95,9 @@ class GoogleMapPlotter(object):
             https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.tilt
         :param scale_control: (optional) Whether or not to display the Scale control:
             https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.scaleControl
+        :param fit_bounds: (optional) Fit the map to contain the given bounds,
+            as a dict of the form {'north':, 'south':, 'east':, 'west':}:
+            https://developers.google.com/maps/documentation/javascript/reference/map#Map.fitBounds
         '''
 
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
@@ -117,6 +120,7 @@ class GoogleMapPlotter(object):
         self._map_styles = kwargs.get('map_styles', [])
         self._tilt = kwargs.get('tilt') 
         self._scale_control = kwargs.get('scale_control', False)
+        self._fit_bounds = kwargs.get('fit_bounds')
 
     @classmethod
     def from_geocode(cls, location_string, zoom=13, apikey=''):
@@ -482,6 +486,9 @@ class GoogleMapPlotter(object):
         w.dedent()
         w.write('});')
         w.write()
+        if self._fit_bounds:
+            w.write('map.fitBounds(%s);' % json.dumps(self._fit_bounds))
+            w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache, label): # TODO: Bundle args into some Point or Marker class (counts as an API change).
         marker_icon = 'marker_%s' % color[1:]
