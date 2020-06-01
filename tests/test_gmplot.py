@@ -38,7 +38,8 @@ class GoogleMapPlotterTest(unittest.TestCase):
         (-122.150288, -122.149794, -122.148936, -122.148142, -122.146747, -122.14561, -122.144773, -122.143936, -122.142992, -122.147863, -122.145953)]
 
     def test_get(self):
-        map = GoogleMapPlotter(37.428, -122.145, 16)
+        bounds = {'north':37.832285, 'south': 37.637336, 'west': -122.520364, 'east': -122.346922}
+        map = GoogleMapPlotter(37.428, -122.145, 16, fit_bounds=bounds)
 
         # Test marker:
         map.marker(37.427, -122.145, "yellow")
