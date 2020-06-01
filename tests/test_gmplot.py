@@ -33,7 +33,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
     PATH_1 = [(37.429, 37.428, 37.427, 37.427, 37.427),
             (-122.145, -122.145, -122.145, -122.146, -122.146)]
     PATH_2 = [[i+.01 for i in PATH_1[0]], [i+.02 for i in PATH_1[1]]]
-    PATH_3 = [(37.433302 , 37.431257 , 37.427644 , 37.430303), (-122.14488, -122.133121, -122.137799, -122.148743)]
+    PATH_3 = [(37.433302, 37.431257, 37.427644, 37.430303), (-122.14488, -122.133121, -122.137799, -122.148743)]
     PATH_4 = [(37.423074, 37.422700, 37.422410, 37.422188, 37.422274, 37.422495, 37.422962, 37.423552, 37.424387, 37.425920, 37.425937),
         (-122.150288, -122.149794, -122.148936, -122.148142, -122.146747, -122.14561, -122.144773, -122.143936, -122.142992, -122.147863, -122.145953)]
 
@@ -71,15 +71,44 @@ class GoogleMapPlotterTest(unittest.TestCase):
             self.assertTrue(issubclass(w[-1].category, FutureWarning), "'heatmap()' should raise a 'FutureWarning'")
 
         # Test scatter:
-        map.scatter(self.PATH_4[0], self.PATH_4[1], c='r', marker=True)
+        map.scatter(self.PATH_3[0], self.PATH_3[1], c='r', marker=[True, False, False, True])
         map.scatter(self.PATH_4[0], self.PATH_4[1], size=[1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], symbol='x')
         map.scatter(self.PATH_4[0], self.PATH_4[1], s=90, marker=False, alpha=0.9, symbol='+', c='red', edge_width=4)
+        map.scatter(self.PATH_3[0], self.PATH_3[1], 
+            color=['r','g','b','k'],
+            precision=[1,2,3,4],
+            marker=[True, True, False, True],
+            title=['First', 'Second', 'Third', 'Fourth'],
+            label=['A','B','C','D'],
+            size=[10,20,30,40],
+            symbol=['+','o','x','x']
+        )
 
         # Test ground overlay:
         bounds_dict = {'north':37.832285, 'south': 37.637336, 'west': -122.520364, 'east': -122.346922}
         map.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds_dict, opacity=0.5)
 
         map.get()
+
+    def test_scatter_length_mismatch(self):
+        map = GoogleMapPlotter(37.428, -122.145, 16)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            
+            map.scatter(self.PATH_3[0], self.PATH_3[1], 
+                color=['r','g','b'],
+                precision=[1,2],
+                marker=[True],
+                title=['First', 'Second'],
+                label=['A','B','C','D','E'],
+                size=[10,20],
+                symbol=['+','o','x','x','o']
+            )
+
+            self.assertEqual(len(w), 7, "'scatter()' should raise 7 warnings")
+            for warning in w:
+                self.assertTrue(issubclass(warning.category, UserWarning), "'scatter()' should raise a 'UserWarning'")
 
     def test_invalid_symbol(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)

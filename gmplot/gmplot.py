@@ -7,7 +7,7 @@ import requests
 import warnings
 import base64
 
-from collections import namedtuple, Iterable
+from collections import namedtuple
 
 from gmplot.color import _get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
@@ -154,52 +154,91 @@ class GoogleMapPlotter(object):
         self._routes.append(_Route(origin, destination, **kwargs))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
-        """
+        '''
         Plot a collection of points on the map.
 
         :param lats: List of latitudes.
         :param lngs: List of longitudes.
-        :param color: Color of plotted points.
-        :param size: Size of plotted points (doesn't affect markers). Can be a list of sizes corresponding to each point.
-        :param marker: True to plot points as markers, False to plot them as symbols.
-        :param c: (Same as `color`.)
-        :param s: (Same as `size`.)
-        :param symbol: Shape of the plotted points (doesn't affect markers).
-        """
-        color = color or c
-        size = size or s or 40
 
-        # If `size` is a single value, expand it into a list to match the list of points:
-        if not isinstance(size, Iterable):
-            size = [size] * len(lats)
+        (any of the following parameters can either be a single value or a list corresponding to each point)
 
-        kwargs["color"] = color
+        :param color/c: (optional) Color of plotted points.
+        :param size/s: (optional) Size of plotted points (symbols only).
+        :param marker: (optional) True to plot points as markers, False to plot them as symbols.
+        :param symbol: (optional) Shape of the plotted points (symbols only).
+        :param title: (optional) Title of plotted points (markers only).
+        :param label: (optional) Label of plotted points (markers only).
+        :param precision: (optional) Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+        '''
+
+        # TODO: Simply adding parameters below is unsustainable - need a better way to handle an arbitrary number of parameters.
+
+        # Process the kwargs:
+        kwargs["color"] = color or c
         settings = self._process_kwargs(kwargs)
-        
-        for lat, lng, symbol_size in zip(lats, lngs, size):
+
+        # Define a lambda that copies a single value into a list of some given length
+        # (if the value is already a list, leave it alone):
+        extend = lambda value, length: value if isinstance(value, list) else [value] * length
+
+        # Extend the `color` parameter into a list...
+        colors = extend(settings['color'], len(lats))
+        if len(colors) != len(lats):
+            warnings.warn("`color`'s length doesn't match the number of points!")
+
+        # ...then remove it from `settings` since `settings['color']` should no longer be used:
+        settings.pop('color')
+
+        # Extend the `precision` parameter into a list...
+        precisions = extend(settings['precision'], len(lats))
+        if len(precisions) != len(lats):
+            warnings.warn("`precision`'s length doesn't match the number of points!")
+
+        # ...then remove it from `settings` since `settings['precision']` should no longer be used:
+        settings.pop('precision')
+
+        # Extend the other parameters:
+        markers = extend(marker, len(lats))
+        if len(markers) != len(lats):
+            warnings.warn("`marker`'s length doesn't match the number of points!")
+
+        titles = extend(kwargs.get('title'), len(lats))
+        if len(titles) != len(lats):
+            warnings.warn("`title`'s length doesn't match the number of points!")
+
+        labels = extend(kwargs.get('label'), len(lats))
+        if len(labels) != len(lats):
+            warnings.warn("`label`'s length doesn't match the number of points!")
+
+        sizes = extend(size or s or 40, len(lats))
+        if len(sizes) != len(lats):
+            warnings.warn("`size`'s length doesn't match the number of points!")
+
+        symbols = extend(symbol, len(lats))
+        if len(symbols) != len(lats):
+            warnings.warn("`symbol`'s length doesn't match the number of points!")
+
+        for lat, lng, color, marker, title, label, size, symbol, precision in zip(lats, lngs, colors, markers, titles, labels, sizes, symbols, precisions):
             if marker:
-                self.marker(lat, lng, settings['color'], precision=settings['precision'])
+                self.marker(lat, lng, color=color, precision=precision, title=title, label=label)
             else:
-                self._add_symbol(Symbol(symbol, lat, lng, symbol_size), **settings)
+                self._add_symbol(Symbol(symbol, lat, lng, size), color=color, **settings) # TODO: Add remaining edge- and face-related symbol parameters.
 
-    def _add_symbol(self, symbol, color=None, c=None, alpha=0.5, **kwargs):
-        color = color or c
-        kwargs.setdefault('face_alpha', alpha)
-        kwargs.setdefault('face_color', "#000000")
-        kwargs.setdefault("color", color)
-        settings = self._process_kwargs(kwargs)
-        self.symbols.append((symbol, settings))
+    def _add_symbol(self, symbol, **kwargs):
+        kwargs.setdefault('face_alpha', kwargs.pop('alpha', 0.5))
+        kwargs.setdefault('color', kwargs.pop('c', None))
+        self.symbols.append((symbol, self._process_kwargs(kwargs)))
 
     def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
-        self._add_symbol(Symbol('o', lat, lng, radius), color, c, alpha, **kwargs)
+        self._add_symbol(Symbol('o', lat, lng, radius), color=color, c=c, alpha=alpha, **kwargs)
 
     def _process_kwargs(self, kwargs):
-        """
+        '''
         Process the given kwargs into visualization settings.
 
         :param kwargs: Dict of keyworded arguments to be converted into visualization settings.
         :return: Processed dict of settings.
-        """
+        '''
         settings = dict()
 
         # Remove all kwargs values of None (since they'll slip through the fallback lines below):
@@ -231,7 +270,12 @@ class GoogleMapPlotter(object):
 
         for key, color in settings.items():
             if 'color' in key:
-                settings[key] = _get_hex_color_code(color)
+                if not isinstance(color, list):
+                    settings[key] = _get_hex_color_code(color)
+                else:
+                    settings[key] = []
+                    for single_color in color:
+                        settings[key].append(_get_hex_color_code(single_color))
 
         settings["closed"] = kwargs.get("closed", None)
         return settings
@@ -244,22 +288,22 @@ class GoogleMapPlotter(object):
         self.paths.append((path, settings))
 
     def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6, weights=None):
-        """
+        '''
         Plot a heatmap.
 
         :param lats: List of latitudes.
         :param lngs: List of longitudes.
-        :param threshold: (Deprecated; use `maxIntensity` instead.)
-        :param radius: Radius of influence for each data point, in pixels.
-        :param gradient: Color gradient of the heatmap, as an array of CSS color strings.
-        :param opacity: Opacity of the heatmap, ranging from 0 to 1.
-        :param maxIntensity: Maximum intensity of the heatmap.
-        :param dissipating: True to dissipate the heatmap on zooming, False to disable dissipation.
-        :param precision: Number of digits after the decimal to round to for lat/lng values.
-        :param weights: List of weights corresponding to each data point.
+        :param threshold: (optional) (Deprecated; use `maxIntensity` instead.)
+        :param radius: (optional) Radius of influence for each data point, in pixels.
+        :param gradient: (optional) Color gradient of the heatmap, as an array of CSS color strings.
+        :param opacity: (optional) Opacity of the heatmap, ranging from 0 to 1.
+        :param maxIntensity: (optional) Maximum intensity of the heatmap.
+        :param dissipating: (optional) True to dissipate the heatmap on zooming, False to disable dissipation.
+        :param precision: (optional) Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+        :param weights: (optional) List of weights corresponding to each data point.
         
         More info: https://developers.google.com/maps/documentation/javascript/reference/visualization#HeatmapLayerOptions
-        """
+        '''
         # Try to give anyone using threshold a heads up.
         if threshold is not None:
             warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'maxIntensity'.", FutureWarning)
