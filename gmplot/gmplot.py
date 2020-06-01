@@ -112,7 +112,6 @@ class GoogleMapPlotter(object):
         self.symbols = []
         self.heatmap_points = []
         self.ground_overlays = []
-        self.radpoints = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.title = kwargs.get('title', 'Google Maps - gmplot')
