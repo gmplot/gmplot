@@ -330,24 +330,22 @@ class GoogleMapPlotter(object):
             heatmap_points.append((lat, lng, weight))
         self.heatmap_points.append((heatmap_points, settings, precision))
 
-    def ground_overlay(self, url, bounds_dict, opacity=1.0):
+    def ground_overlay(self, url, bounds, opacity=1.0):
         '''
-        :param url: Url of image to overlay
-        :param bounds_dict: dict of the form  {'north': , 'south': , 'west': , 'east': }
-        setting the image container
-        :param opacity: The opacity of the overlay, expressed as a number between 0 and 1. Optional. Defaults to 1.
-        :return: None
-        Example use:
-        import gmplot
-        gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
-        bounds_dict = {'north':37.832285, 'south': 37.637336, 'west': -122.520364, 'east': -122.346922}
-        gmap.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds_dict)
-        gmap.draw("my_map.html")
-        Google Maps API documentation
-        https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
-        '''
+        :param url: URL of image to overlay.
+        :param bounds: Image bounds, as a dict of the form {'north':, 'south':, 'east':, 'west':}.
+        :param opacity: (optional) Opacity of the overlay, expressed as a number between 0 and 1. Defaults to 1.
 
-        self.ground_overlays.append((url, bounds_dict, opacity))
+        Example:
+            import gmplot
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
+            bounds = {'north':37.832285, 'south': 37.637336, 'east': -122.346922, 'west': -122.520364}
+            gmap.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds)
+            gmap.draw("my_map.html")
+
+        More info: https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
+        '''
+        self.ground_overlays.append((url, bounds, opacity))
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         color = color or c
@@ -620,24 +618,17 @@ class GoogleMapPlotter(object):
             w.write()
 
     def write_ground_overlay(self, w):
-        for url, bounds_dict, opacity in self.ground_overlays:
+        for url, bounds, opacity in self.ground_overlays:
             w.write('''
                 new google.maps.GroundOverlay(
                     "{url}",
-                    {{
-            '''.format(url=url))
-            w.indent().indent()
-            for direction in ['north', 'south', 'east', 'west']:
-                w.write('%s: %.4f,' % (direction, bounds_dict[direction]))
-            w.dedent().dedent()
-            w.write('''
-                    }},
+                    {bounds},
                     {{
                         opacity: {opacity},
                         map: map
                     }}
                 );
-            '''.format(opacity=opacity))
+            '''.format(url=url, bounds=json.dumps(bounds), opacity=opacity))
             w.write()
 
 if __name__ == "__main__": # pragma: no coverage
