@@ -6,6 +6,7 @@ import os
 import requests
 import warnings
 import base64
+import math
 
 from collections import namedtuple
 
@@ -105,7 +106,6 @@ class GoogleMapPlotter(object):
         self.zoom = int(zoom)
         self.map_type = str(map_type)
         self.apikey = str(apikey)
-        self.grids = None
         self.paths = []
         self.shapes = []
         self.points = []
@@ -137,8 +137,8 @@ class GoogleMapPlotter(object):
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
 
-    def grid(self, slat, elat, latin, slng, elng, lngin):
-        self.gridsetting = [slat, elat, latin, slng, elng, lngin]
+    def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment):
+        self.gridsetting = [lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None):
         self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision, label))
@@ -421,29 +421,36 @@ class GoogleMapPlotter(object):
     def write_grids(self, w):
         if self.gridsetting is None:
             return
-        slat = self.gridsetting[0]
-        elat = self.gridsetting[1]
-        latin = self.gridsetting[2]
-        slng = self.gridsetting[3]
-        elng = self.gridsetting[4]
-        lngin = self.gridsetting[5]
-        self.grids = []
 
-        r = [
-            slat + float(x) * latin for x in range(0, int((elat - slat) / latin))]
-        for lat in r:
-            self.grids.append(
-                [(lat + latin / 2.0, slng + lngin / 2.0), (lat + latin / 2.0, elng + lngin / 2.0)])
+        lat_start = self.gridsetting[0] # TODO: Use a better structure than a list (counts as an API change).
+        lat_end = self.gridsetting[1]
+        lat_increment = self.gridsetting[2]
+        lng_start = self.gridsetting[3]
+        lng_end = self.gridsetting[4]
+        lng_increment = self.gridsetting[5]
 
-        r = [
-            slng + float(x) * lngin for x in range(0, int((elng - slng) / lngin))]
-        for lng in r:
-            self.grids.append(
-                [(slat + latin / 2.0, lng + lngin / 2.0), (elat + latin / 2.0, lng + lngin / 2.0)])
+        settings = self._process_kwargs({"color": "#000000"})
 
-        for line in self.grids:
-            settings = self._process_kwargs({"color": "#000000"})
-            self.write_polyline(w, line, settings)
+        # Draw the grid's bounding box:
+        self.write_polyline(w, [
+            (lat_start, lng_start),
+            (lat_end, lng_start),
+            (lat_end, lng_end),
+            (lat_start, lng_end),
+            (lat_start, lng_start)
+        ], settings)
+
+        get_num_divisions = lambda start, end, increment: int(math.ceil((end - start) / increment))
+
+        # Draw the grid's latitudinal divisions:
+        for lat_index in range(1, get_num_divisions(lat_start, lat_end, lat_increment)):
+            lat = lat_start + float(lat_index) * lat_increment
+            self.write_polyline(w, [(lat, lng_start), (lat, lng_end)], settings)
+
+        # Draw the grid's longitudinal divisions: 
+        for lng_index in range(1, get_num_divisions(lng_start, lng_end, lng_increment)):
+            lng = lng_start + float(lng_index) * lng_increment
+            self.write_polyline(w, [(lat_start, lng), (lat_end, lng)], settings)
 
     def write_points(self, w):
         color_cache = set()
