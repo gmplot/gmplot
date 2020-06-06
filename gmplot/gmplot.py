@@ -335,7 +335,8 @@ class GoogleMapPlotter(object):
         :param bounds: Image bounds, as a dict of the form {'north':, 'south':, 'east':, 'west':}.
         :param opacity: (optional) Opacity of the overlay, expressed as a number between 0 and 1. Defaults to 1.
 
-        Example:
+        Usage::
+
             import gmplot
             gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
             bounds = {'north':37.832285, 'south': 37.637336, 'east': -122.346922, 'west': -122.520364}
