@@ -9,3 +9,8 @@ gmplot.egg-info
 # Ignore coverage-related files:
 .coverage
 coverage-html
+
+# Ignore documentation-related files:
+_build
+_static
+_templates
