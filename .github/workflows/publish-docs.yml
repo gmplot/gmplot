@@ -27,10 +27,14 @@ jobs:
         run: |
           python -m sphinx.cmd.build -b markdown docs docs/_build
           mv docs/_build/_api/* docs/_build/
+          mv docs/images/* docs/_build/
 
       - name: Publish to GitHub Wiki
-        uses: SwiftDocOrg/github-wiki-publish-action@1.0.0
+        uses: gmplot/github-wiki-publish-action@rsync
         with:
           path: docs/_build
         env:
-          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+        # TODO: This uses an unreleased version of the publish action - once that action's
+        #       functionality is merged and released, the version used here should be updated
+        #       with SwiftDocOrg's.

@@ -335,19 +335,29 @@ class GoogleMapPlotter(object):
 
     def ground_overlay(self, url, bounds, opacity=1.0):
         '''
+        Overlay an image from a given URL onto the map.
+
+        For more info, see `Google Maps <https://developers.google.com/maps/documentation/javascript/groundoverlays>`_.
+
         :param url: URL of image to overlay.
-        :param bounds: Image bounds, as a dict of the form {'north':, 'south':, 'east':, 'west':}.
+        :type url: str
+
+        :param bounds: Image bounds, as a dict of the form ``{'north':, 'south':, 'east':, 'west':}``.
+        :type bounds: dict
+
         :param opacity: (optional) Opacity of the overlay, expressed as a number between 0 and 1. Defaults to 1.
+        :type opacity: float
 
         Usage::
 
             import gmplot
-            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13)
-            bounds = {'north':37.832285, 'south': 37.637336, 'east': -122.346922, 'west': -122.520364}
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 12, apikey=apikey)
+            bounds = {'north': 37.832285, 'south': 37.637336, 'east': -122.346922, 'west': -122.520364}
             gmap.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds)
-            gmap.draw("my_map.html")
+            gmap.draw("map.html")
 
-        More info: https://developers.google.com/maps/documentation/javascript/groundoverlays#introduction
+        .. image:: GoogleMapPlotter.ground_overlay.png
         '''
         self.ground_overlays.append((url, bounds, opacity))
 
