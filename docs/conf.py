@@ -15,7 +15,7 @@ extensions = [
 
 templates_path = ['_templates']
 source_suffix = '.rst'
-master_doc = 'index'
+master_doc = 'Home'
 
 # Configure extensions:
 autoclass_content = 'both'

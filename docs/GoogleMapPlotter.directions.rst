@@ -1,0 +1,1 @@
+.. automethod:: gmplot::GoogleMapPlotter.directions

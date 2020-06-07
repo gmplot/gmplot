@@ -1,0 +1,1 @@
+.. autoclass:: gmplot::GoogleMapPlotter
