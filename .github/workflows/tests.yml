@@ -1,10 +1,10 @@
 ### This workflow will install Python dependencies and run tests with a variety of Python versions.
 
-name: gmplot_tests
+name: tests
 
 on:
   repository_dispatch:
-    types: manual-tests
+    types: tests
   push:
     branches: [ '*' ]
   pull_request:

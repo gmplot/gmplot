@@ -1,10 +1,10 @@
 ### This workflow will generate documentation to update the GitHub Wiki accordingly.
 
-name: gmplot_docs
+name: publish-docs
 
-on:
+on: # TODO: Have this run on new releases.
   repository_dispatch:
-    types: manual-docs
+    types: publish-docs
 
 jobs:
   build:
