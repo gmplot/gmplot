@@ -12,7 +12,7 @@ from collections import namedtuple
 
 from gmplot.color import _get_hex_color_code
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
-from gmplot.utility import StringIO
+from gmplot.utility import StringIO, _INDENT_LEVEL
 from gmplot.writer import _Writer
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
@@ -78,6 +78,10 @@ class _Route(object):
         w.write()
 
 class GoogleMapPlotter(object):
+    '''
+    Plotter that draws on a Google Map.
+    '''
+
     _HEATMAP_DEFAULT_WEIGHT = 1
 
     def __init__(self, center_lat, center_lng, zoom, map_type='', apikey='', **kwargs):
@@ -479,7 +483,7 @@ class GoogleMapPlotter(object):
         w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
         w.indent()
         if self._map_styles:
-            w.write('styles: %s,' % json.dumps(self._map_styles, indent=4)) # TODO: Indent size defined elsewhere too; consolidate as a single constant.
+            w.write('styles: %s,' % json.dumps(self._map_styles, indent=_INDENT_LEVEL))
         if self.map_type:
             w.write('mapTypeId: "%s",' % self.map_type.lower())
         if self._tilt is not None:

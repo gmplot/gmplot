@@ -1,13 +1,9 @@
 import warnings
 import inspect
+from .utility import _INDENT
 
 class _Writer(object):
     '''Writer used to format content with consistent indentation.'''
-
-    _INDENT = ' ' * 4
-    # Note: This should match a single indent used in the actual source code,
-    #       that way, if content written using this class includes indentation,
-    #       the formatted output will have consistent indentation.
 
     def __init__(self, file):
         ''':param file: File to write to.'''
@@ -60,7 +56,7 @@ class _Writer(object):
 
         if lines:
             for line in lines:
-                self._file.write(self._INDENT * self._indent_level + line + '\n')
+                self._file.write(_INDENT * self._indent_level + line + '\n')
         else:
             self._file.write('\n')
           

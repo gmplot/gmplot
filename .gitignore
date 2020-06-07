@@ -11,6 +11,7 @@ gmplot.egg-info
 coverage-html
 
 # Ignore documentation-related files:
+_api
 _build
 _static
 _templates
