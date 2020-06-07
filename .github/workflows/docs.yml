@@ -25,11 +25,13 @@ jobs:
 
       - name: Generate documentation
         run: |
-          python -m sphinx.cmd.build -b markdown docs docs/_build
+          cd docs
+          python -m sphinx.cmd.build -b markdown . _build
+          cp _Sidebar.md _build/
 
       - name: Publish to GitHub Wiki
         uses: SwiftDocOrg/github-wiki-publish-action@1.0.0
         with:
-          path: docs/_build
+          path: _build
         env:
           GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
