@@ -91,8 +91,12 @@ class _GenerateDocFiles(object):
             ancestor to its immediate parent.
         '''
         for name, item in element.__dict__.items():
-            # Skip items that are private or non-public, and skip members that don't have a docstring:
-            if name[0] == '_' or item.__doc__ is None:
+            # Skip private and non-public items:
+            if name[0] == '_':
+                continue
+
+            # Skip items that don't have a docstring of their own:
+            if item.__doc__ is None or item.__doc__ == getattr(getattr(item, '__class__', None), '__doc__', None):
                 continue
 
             # Get this item's ancestry:
