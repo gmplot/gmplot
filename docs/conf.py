@@ -11,8 +11,6 @@ sys.path.insert(0, os.path.abspath('..'))
 # Configure base functionality:
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.coverage',
     'sphinx_markdown_builder',
 ]
 
