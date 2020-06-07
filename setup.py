@@ -13,13 +13,12 @@ def get_requirements(requirements_file):
 setup(
     name = 'gmplot',
     version = __version__,
-    author = 'Michael Woods',
-    author_email = 'physicsmichael@gmail.com',
-    url = 'https://github.com/vgm64/gmplot',
-    description = 'Provide a matplotlib like interface to plotting data with Google Maps',
+    author = 'gmplot contributors',
+    url = 'https://github.com/gmplot/gmplot',
+    description = 'A matplotlib-like interface to plot data with Google Maps.',
     long_description=read('README.rst'),
     license='MIT',
-    keywords='python wrapper google maps',
+    keywords='python google-maps visualization',
     packages = find_packages(),
     include_package_data=True,
     package_data = {
