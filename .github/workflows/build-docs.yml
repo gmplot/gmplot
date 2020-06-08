@@ -36,5 +36,6 @@ jobs:
       - name: Generate documentation
         run: |
           python -m sphinx.cmd.build -b markdown docs docs/_build
+          python -c "import gmplot.utility; gmplot.utility._pretty_format_markdown('docs/_build/_api/')"
           mv docs/_build/_api/* docs/_build/
           mv docs/images/* docs/_build/

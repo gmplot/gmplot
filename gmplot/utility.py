@@ -124,3 +124,134 @@ class _GenerateDocFiles(object):
 
             # Continue parsing the module tree:
             self._recurse(item, new_ancestry)
+
+def _bookend(string, fragment):
+    '''
+    Bookend a given string with the given fragment on both ends.
+
+    :param string: String to bookend.
+    :param fragment: Fragment to bookend the string with.
+    :return: Bookended string.
+    '''
+    if not string:
+        return ''
+
+    if string.startswith(fragment) and string.endswith(fragment):
+        return string
+
+    return fragment + string + fragment
+
+def _pretty_format_signature_header(signature_header):
+    '''
+    Pretty format a given Markdown signature header.
+
+    :param signature_header: Signature header to format.
+    :return: Formatted signature header.
+
+    Given:
+        ### class module.function(param1, param2=None)
+    
+    Output:
+        _class_ module.**function**(_param1, param2=None_)
+    '''
+    new_header = ''
+
+    # Trim the closing parenthesis:
+    if signature_header[-1] != ')':
+        return None
+    signature_header = signature_header[:-1]
+
+    # Split the parameters from the rest of the signature header:
+    parenthesis_index = signature_header.find('(')
+    if parenthesis_index == -1:
+        return None
+
+    parameters = _bookend(signature_header[parenthesis_index + 1:], '_')
+    signature_header = signature_header[:parenthesis_index]
+ 
+    # Split the rest of the signature header by whitespace:
+    header_sections = signature_header.split()
+
+    # Ensure the first portion of the header is a valid header level (e.g. '#' or '####'):
+    header_level = header_sections[0]
+    HEADER_CHARACTER = '#'
+    if header_level[0] != HEADER_CHARACTER or header_level != len(header_level) * header_level[0]:
+        return None
+
+    # Get the annotation and full name portions of the header:
+    if len(header_sections) == 2:
+        annotation = None
+        full_name = header_sections[1]
+    elif len(header_sections) == 3:
+        annotation = header_sections[1]
+        full_name = header_sections[2]
+    else:
+        return None
+
+    # If an annotation exists (e.g. 'class' or 'method'), add it to the new header,
+    # and italicize it if needed:
+    if annotation:
+        new_header += _bookend(annotation, '_') + ' '
+
+    # Split the scope from the name:
+    last_period_index = full_name.rfind('.')
+    if last_period_index == -1:
+        return None
+
+    scope = full_name[:last_period_index]
+    name = _bookend(full_name[last_period_index + 1:], '**')
+
+    # Rebuild the signature using the new format:
+    new_header += scope + '.' + name + '(' + parameters + ')'
+
+    return new_header
+
+def _pretty_format_markdown(directory):
+    '''
+    Pretty format all Markdown files in the given directory.
+
+    :param directory: Directory containing the Markdown files to format. 
+    '''
+    for filename in os.listdir(directory):
+
+        # Skip non-Markdown files:
+        if not filename.endswith(".md"):
+            continue
+
+        # Read the file's contents:
+        with open(directory + filename, 'r') as file:
+            lines = file.readlines()
+
+        # Skip if there's no content:
+        if not lines:
+            continue
+
+        # Pretty format the signature header:
+        lines[0] = _pretty_format_signature_header(lines[0][:-1]) # (exclude trailing newline)
+        if lines[0] is None:
+            warnings.warn("Couldn't parse `%s`'s signature header." % filename)
+            continue
+        lines[0] += '\n'
+
+        # Add a line break right after the header:
+        lines.insert(1, '\n')
+        lines.insert(2, '---\n')
+        lines.insert(3, '\n')
+
+        # Ensure all literal blocks get Python highlighting:
+        in_literal_block = False
+        CODE_LITERAL_SYMBOL = '```'
+        for index, line in enumerate(lines):
+            if line.startswith(CODE_LITERAL_SYMBOL):
+                if not in_literal_block:
+                    in_literal_block = True
+                    lines[index] = CODE_LITERAL_SYMBOL + 'python\n'
+                else:
+                    in_literal_block = False
+        if in_literal_block:
+            warnings.warn('Unclosed literal block in `%s`.'  % filename)
+            continue
+
+        # Update the file:
+        with open(directory + filename, 'w') as file:
+            file.writelines(lines)
