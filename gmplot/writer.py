@@ -6,8 +6,10 @@ class _Writer(object):
     '''Writer used to format content with consistent indentation.'''
 
     def __init__(self, file):
-        ''':param file: File to write to.'''
-
+        '''
+        Args:
+            file (handle): File to write to.
+        '''
         self._file = file
         self._indent_level = 0
 
@@ -16,24 +18,22 @@ class _Writer(object):
 
     def __exit__(self, exception_type, exception_value, traceback):
         '''
-        :param exception_type: Type of exception that triggered the exit. 
-        :param exception_value: Value of exception that triggered the exit.
-        :param traceback: Traceback when exit was triggered.
+        Args:
+            exception_type: Type of exception that triggered the exit. 
+            exception_value: Value of exception that triggered the exit.
+            traceback: Traceback when exit was triggered.
         '''
-
         # Clear the file if an uncaught exception occured while writing:
         if exception_type:
             self._file.truncate(0)
 
     def indent(self):
         '''Indent the writer by one level.'''
-
         self._indent_level += 1
         return self
 
     def dedent(self):
         '''Dedent the writer by one level.'''
-
         if self._indent_level > 0:
             self._indent_level -= 1
         else:
@@ -45,13 +45,15 @@ class _Writer(object):
         '''
         Write content.
 
-        :param content: (optional) Content to write, as a string. If empty, a new line is written.
-            Content is cleaned using the same rules as Python's `inspect.cleandoc()`:
-            - Leading and trailing empty lines are removed.
-            - Any leading whitespace common to all lines is removed.
-            - All tabs are expanded to spaces.
-        '''
+        Optional:
 
+        Args:
+            content (str): Content to write, as a string. If empty, a new line is written.
+                Content is cleaned using the same rules as Python's `inspect.cleandoc()`:
+                - Leading and trailing empty lines are removed.
+                - Any leading whitespace common to all lines is removed.
+                - All tabs are expanded to spaces.
+        '''
         lines = inspect.cleandoc(content).splitlines()
 
         if lines:
