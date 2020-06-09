@@ -24,24 +24,44 @@ class InvalidSymbolError(Exception):
 class GoogleAPIError(Exception):
     pass
 
-def safe_iter(var):
+def safe_iter(var): # TODO: Remove since unused (counts as API change).
     try:
         return iter(var)
     except TypeError:
         return [var]
 
-def _format_LatLng(lat, lng, precision=6):
+def _format_LatLng(lat, lng, precision=6): # TODO: Make static method of GoogleMapPlotter.
+    '''
+    Format the given latitude/longitude location as a Google Maps LatLng object.
+
+    Args:
+        lat (float): Latitude.
+        lng (float): Longitude.
+
+    Optional:
+
+    Args:
+        precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+    Returns:
+        str: Formatted Google Maps LatLng object.
+    '''
     return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lng)
 
 class _Route(object):
-    '''More info: https://developers.google.com/maps/documentation/javascript/directions'''
+    '''For more info, see Google Maps' `Directions Service https://developers.google.com/maps/documentation/javascript/directions`_.'''
     
     def __init__(self, origin, destination, **kwargs):
         '''
-        :param origin: Origin, as a latitude/longitude tuple.
-        :param destination: Destination, as a latitude/longitude tuple.
-        :param travel_mode: (optional) Travel mode, as an uppercase string. Defaults to 'DRIVING'.
-        :param waypoints: (optional) Waypoints, as a list of latitude/longitude tuples.
+        Args:
+            origin ((float, float)): Origin, as a latitude/longitude tuple.
+            destination ((float, float)): Destination, as a latitude/longitude tuple.
+
+        Optional:
+
+        Args:
+            travel_mode (str): Travel mode. Defaults to 'DRIVING'.
+            waypoints (list of (float, float)): Waypoints.
         '''
         self.origin = origin
         self.destination = destination
@@ -52,9 +72,9 @@ class _Route(object):
         '''
         Write the route.
 
-        :param w: Writer used to write the route.
+        Args:
+            w (_Writer): Writer used to write the route.
         '''
-
         w.write('new google.maps.DirectionsService().route({')
         w.indent()
         w.write('origin: %s,' % _format_LatLng(*self.origin))
@@ -84,29 +104,72 @@ class GoogleMapPlotter(object):
 
     _HEATMAP_DEFAULT_WEIGHT = 1
 
-    def __init__(self, center_lat, center_lng, zoom, map_type='', apikey='', **kwargs):
+    def __init__(self, lat, lng, zoom, map_type='', apikey='', **kwargs):
         '''
-        :param center_lat: Latitude of the center of the map.
-        :param center_lng: Longitude of the center of the map.
-        :param zoom: Zoom level, where 0 is fully zoomed out. More info:
-            https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
-        :param map_type: (optional) Map type, as documented here:
-            https://developers.google.com/maps/documentation/javascript/maptypes
-        :param apikey: (optional) Google Maps API key.
-        :param title: (optional) Title of the HTML file.
-        :param map_styles: (optional) Map styles, as documented here:
-            https://developers.google.com/maps/documentation/javascript/style-reference
-        :param tilt: (optional) Tilt of the map upon zooming in:
-            https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.tilt
-        :param scale_control: (optional) Whether or not to display the Scale control:
-            https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.scaleControl
-        :param fit_bounds: (optional) Fit the map to contain the given bounds,
-            as a dict of the form {'north':, 'south':, 'east':, 'west':}:
-            https://developers.google.com/maps/documentation/javascript/reference/map#Map.fitBounds
-        '''
+        Args:
+            lat (float): Latitude of the center of the map.
+            lng (float): Longitude of the center of the map.
+            zoom (int): `Zoom level`_, where 0 is fully zoomed out.
 
+        Optional:
+
+        Args:
+            map_type (str): `Map type`_.
+            apikey (str): Google Maps `API key`_.
+            title (str): Title of the HTML file (as it appears in the browser tab).
+            map_styles (list of dicts): `Map styles`_. Requires `Maps JavaScript API`_.
+            tilt (int): `Tilt`_ of the map upon zooming in.
+            scale_control (bool): Whether or not to display the `scale control`_. Defaults to False.
+            fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
+                ``{'north':, 'south':, 'east':, 'west':}``.
+            
+        .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
+        .. _Map type: https://developers.google.com/maps/documentation/javascript/maptypes
+        .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
+        .. _Map styles: https://developers.google.com/maps/documentation/javascript/style-reference
+        .. _Maps JavaScript API: https://console.cloud.google.com/marketplace/details/google/maps-backend.googleapis.com
+        .. _Tilt: https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.tilt
+        .. _scale control: https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.scaleControl
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.7670, -122.4385, 13, apikey=apikey, map_type='hybrid')
+            gmap.draw("map.html")
+
+        .. image:: GoogleMapPlotter.png
+
+        Further customization and `styling`_::
+
+            import gmplot
+
+            apikey = '' # (your API key here)
+            bounds = {'north': 37.967, 'south': 37.567, 'east': -122.238, 'west': -122.638}
+            map_styles = [
+                {
+                    'featureType': 'all',
+                    'stylers': [
+                        {'saturation': -80},
+                        {'lightness': 30},
+                    ]
+                }
+            ]
+
+            gmplot.GoogleMapPlotter(
+                37.766956, -122.438481, 13,
+                apikey=apikey,
+                map_styles=map_styles,
+                scale_control=True,
+                fit_bounds=bounds
+            ).draw("map.html")
+
+        .. _styling: https://developers.google.com/maps/documentation/javascript/styling
+
+        .. image:: GoogleMapPlotter_Styled.png
+        '''
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
-        self.center = (float(center_lat), float(center_lng))
+        self.center = (float(lat), float(lng))
         self.zoom = int(zoom)
         self.map_type = str(map_type)
         self.apikey = str(apikey)
@@ -126,14 +189,72 @@ class GoogleMapPlotter(object):
         self._fit_bounds = kwargs.get('fit_bounds')
 
     @classmethod
-    def from_geocode(cls, location_string, zoom=13, apikey=''):
-        lat, lng = cls.geocode(location_string, apikey)
-        return cls(lat, lng, zoom, apikey)
+    def from_geocode(cls, location, zoom=13, apikey=''):
+        '''
+        Initialize a GoogleMapPlotter object using a location string (instead of a specific lat/lng location).
+
+        Requires `Geocoding API`_.
+
+        Args:
+            location (str): Location or address of interest, as a human-readable string.
+
+        Optional:
+
+        Args:
+            zoom (int): `Zoom level`_, where 0 is fully zoomed out. Defaults to 13.
+            apikey (str): Google Maps `API key`_.
+
+        Returns:
+            :class:`GoogleMapPlotter` object.
+
+        .. _Geocoding API: https://console.cloud.google.com/marketplace/details/google/geocoding-backend.googleapis.com
+        .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
+        .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter.from_geocode('Chiyoda City, Tokyo', apikey=apikey)
+            gmap.draw("map.html")
+
+        .. image:: GoogleMapPlotter.from_geocode.png
+        '''
+        lat, lng = cls.geocode(location, apikey=apikey)
+        return cls(lat, lng, zoom, apikey=apikey)
 
     @classmethod
-    def geocode(self, location_string, apikey=''):
+    def geocode(self, location, apikey=''): # TODO: Change to a staticmethod (counts as an API change).
+        '''
+        Return the lat/lng coordinates of a location string.
+
+        Requires `Geocoding API`_.
+
+        Args:
+            location (str): Location or address of interest, as a human-readable string.
+
+        Optional:
+
+        Args:
+            apikey (str): Google Maps `API key`_.
+
+        .. _Geocoding API: https://console.cloud.google.com/marketplace/details/google/geocoding-backend.googleapis.com
+        .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
+
+        Returns:
+            (float, float): Latitude/longitude coordinates of the given
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            location = gmplot.GoogleMapPlotter.geocode('Versailles, France', apikey=apikey)
+            print(location)
+
+            -> (48.801408, 2.130122)
+        '''
         geocode = requests.get(
-            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location_string, apikey))
+            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location, apikey))
         geocode = json.loads(geocode.text)
         if geocode.get('error_message', ''):
             raise GoogleAPIError(geocode['error_message'])
@@ -141,43 +262,150 @@ class GoogleMapPlotter(object):
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
 
-    def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment):
+    def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment): # TODO: Replace start/end params with bounds parameter used elsewhere (counts as an API change).
+        '''
+        Plot a grid.
+
+        Args:
+            lat_start (float): Starting latitude of the grid.
+            lat_end (float): Ending latitude of the grid.
+            lat_increment (float): Distance between latitudinal divisions.
+            lng_start (float): Starting longitude of the grid.
+            lng_end (float): Ending longitude of the grid.
+            lng_increment (float): Distance between longitudinal divisions.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.425, -122.145, 16, apikey=apikey)
+            gmap.grid(37.42, 37.43, 0.002, -122.15, -122.14, 0.0025)
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.grid.png
+        '''
         self.gridsetting = [lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment]
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None):
+        '''
+        Display a marker.
+
+        Args:
+            lat (float): Latitude of the marker.
+            lng (float): Longitude of the marker.
+
+        Optional:
+
+        Args:
+            color/c (str): Marker color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to red.
+            title (str): Hover-over title of the marker.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            label (str): Label displayed on the marker.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+
+            gmap.marker(37.793575, -122.464334, label='H')
+            gmap.marker(37.768442, -122.441472, color='green', title='Buena Vista Park')
+            gmap.marker(37.783333, -122.439494, precision=2, color='#FFD700')
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.marker.png
+        '''
         self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision, label))
 
     def directions(self, origin, destination, **kwargs):
         '''
         Display directions from an origin to a destination.
 
-        :param origin: Origin, as a latitude/longitude tuple.
-        :param destination: Destination, as a latitude/longitude tuple.
-        :param travel_mode: (optional) Travel mode, as an uppercase string. Defaults to 'DRIVING'.
-        :param waypoints: (optional) Waypoints, as a list of latitude/longitude tuples.
+        Requires `Directions API`_.
 
-        More info: https://developers.google.com/maps/documentation/javascript/directions
+        Args:
+            origin ((float, float)): Origin, in latitude/longitude.
+            destination ((float, float)): Destination, in latitude/longitude.
+
+        Optional:
+
+        Args:
+            travel_mode (str): `Travel mode`_. Defaults to 'DRIVING'.
+            waypoints (list of (float, float)): Waypoints to pass through.
+
+        .. _Directions API: https://console.cloud.google.com/marketplace/details/google/directions-backend.googleapis.com
+        .. _Travel mode: https://developers.google.com/maps/documentation/javascript/directions#TravelModes
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+
+            gmap.directions(
+                (37.799001, -122.442692),
+                (37.832183, -122.477914),
+                waypoints=[
+                    (37.801036, -122.434586),
+                    (37.805461, -122.437262)
+                ]
+            )
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.directions.png
         '''
         self._routes.append(_Route(origin, destination, **kwargs))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         '''
-        Plot a collection of points on the map.
+        Plot a collection of points.
 
-        :param lats: List of latitudes.
-        :param lngs: List of longitudes.
+        Args:
+            lats (list of float): Latitudes.
+            lngs (list of float): Longitudes.
 
-        (any of the following parameters can either be a single value or a list corresponding to each point)
+        Optional:
 
-        :param color/c: (optional) Color of plotted points.
-        :param size/s: (optional) Size of plotted points (symbols only).
-        :param marker: (optional) True to plot points as markers, False to plot them as symbols.
-        :param symbol: (optional) Shape of the plotted points (symbols only).
-        :param title: (optional) Title of plotted points (markers only).
-        :param label: (optional) Label of plotted points (markers only).
-        :param precision: (optional) Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+        Args:
+            color/c (str or list of str): Color of each point. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            size/s (int or list of int): Size of each point, in meters (symbols only). Defaults to 40.
+            marker (bool or list of bool): True to plot points as markers, False to plot them as symbols. Defaults to True.
+            symbol (str or list of str): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
+            title (str or list of str): Hover-over title of each point (markers only).
+            label (str or list of str): Label displayed on each point (markers only).
+            precision (int or list of int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.479481, 15, apikey=apikey)
+
+            attractions = zip(*[
+                (37.769901, -122.498331),
+                (37.768645, -122.475328),
+                (37.771478, -122.468677),
+                (37.769867, -122.466102),
+                (37.767187, -122.467496),
+                (37.770104, -122.470436)
+            ])
+
+            gmap.scatter(
+                *attractions,
+                color=['red', 'orange', 'yellow', 'green', 'blue', 'purple'],
+                s=60,
+                marker=[True, True, False, True, False, False],
+                symbol=[None, None, 'o', None, 'x', '+'],
+                title=['First', 'Second', None, 'Third', None, None],
+                label=['A', 'B', 'C', 'D', 'E', 'F']
+            )
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.scatter.png
         '''
-
         # TODO: Simply adding parameters below is unsustainable - need a better way to handle an arbitrary number of parameters.
 
         # Process the kwargs:
@@ -232,19 +460,73 @@ class GoogleMapPlotter(object):
                 self._add_symbol(Symbol(symbol, lat, lng, size), color=color, **settings) # TODO: Add remaining edge- and face-related symbol parameters.
 
     def _add_symbol(self, symbol, **kwargs):
+        '''
+        Add a symbol to the list of symbols to render.
+
+        Args:
+            symbol (Symbol): Symbol to add.
+
+        Optional:
+
+        Args:
+            edge_alpha/ea (float): Opacity of the symbol's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the symbol's edge, in pixels. Defaults to 1.
+            face_alpha/alpha (float): Opacity of the symbol's face, ranging from 0 to 1. Defaults to 0.5.
+            color/c/face_color/fc (str): Color of the symbol's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            color/c/edge_color/ec (str): Color of the symbol's edge.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+        '''
         kwargs.setdefault('face_alpha', kwargs.pop('alpha', 0.5))
         kwargs.setdefault('color', kwargs.pop('c', None))
         self.symbols.append((symbol, self._process_kwargs(kwargs)))
 
     def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
+        '''
+        Plot a circle.
+
+        Args:
+            lats (float): Latitude of the center of the circle.
+            lngs (float): Longitude of the center of the circle.
+            radius (int): Radius of the circle, in meters.
+
+        Optional:
+
+        Args:
+            edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
+            face_alpha/alpha (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
+            color/c/face_color/fc (str): Color of the circle's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            color/c/edge_color/ec (str): Color of the circle's edge.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+
+            gmap.circle(37.776956, -122.448481, 200)
+            gmap.circle(37.792915, -122.427716, 400, face_alpha=0, ew=3, color='red')
+            gmap.circle(37.761601, -122.415438, 600, edge_color='#ffffff', fc='b')
+            gmap.circle(37.757069, -122.457245, 800, edge_alpha=0, color='#cccccc')
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.circle.png
+        '''
         self._add_symbol(Symbol('o', lat, lng, radius), color=color, c=c, alpha=alpha, **kwargs)
 
     def _process_kwargs(self, kwargs):
         '''
         Process the given kwargs into visualization settings.
 
-        :param kwargs: Dict of keyworded arguments to be converted into visualization settings.
-        :return: Processed dict of settings.
+        Args:
+            kwargs (dict): Dict of keyworded arguments to be converted into visualization settings.
+
+        Returns:
+            Processed dict of settings.
         '''
         settings = dict()
 
@@ -288,32 +570,101 @@ class GoogleMapPlotter(object):
         return settings
 
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
+        '''
+        Plot a polyline.
+
+        Args:
+            lats (list of float): Latitudes.
+            lngs (list of float): Longitudes.
+
+        Optional:
+
+        Args:
+            color/c/edge_color/ec (str): Color of the polyline.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the polyline, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the polyline, in pixels. Defaults to 1.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+        Usage::
+            
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+
+            path = zip(*[
+                (37.773097, -122.471789),
+                (37.785920, -122.472693),
+                (37.787815, -122.472178),
+                (37.791430, -122.469763),
+                (37.792547, -122.469624),
+                (37.800724, -122.469460)
+            ])
+
+            gmap.plot(*path, edge_width=7, color='red')
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.plot.png
+        '''
         color = color or c
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
         path = zip(lats, lngs)
         self.paths.append((path, settings))
 
-    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, maxIntensity=1, dissipating=True, precision=6, weights=None):
+    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, max_intensity=1, dissipating=True, precision=6, weights=None):
         '''
         Plot a heatmap.
 
-        :param lats: List of latitudes.
-        :param lngs: List of longitudes.
-        :param threshold: (optional) (Deprecated; use `maxIntensity` instead.)
-        :param radius: (optional) Radius of influence for each data point, in pixels.
-        :param gradient: (optional) Color gradient of the heatmap, as an array of CSS color strings.
-        :param opacity: (optional) Opacity of the heatmap, ranging from 0 to 1.
-        :param maxIntensity: (optional) Maximum intensity of the heatmap.
-        :param dissipating: (optional) True to dissipate the heatmap on zooming, False to disable dissipation.
-        :param precision: (optional) Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
-        :param weights: (optional) List of weights corresponding to each data point.
+        Args:
+            lats (list of float): Latitudes.
+            lngs (list of float): Longitudes.
+
+        Optional:
+
+        Args:
+            threshold: (Deprecated; use `max_intensity` instead.)
+            radius (int): Radius of influence for each data point, in pixels. Defaults to 10.
+            gradient (list of (int, int, int, float)): Color gradient of the heatmap, as a list of `RGBA`_ colors.
+                The color order defines the gradient moving towards the center of a point.
+            opacity (float): Opacity of the heatmap, ranging from 0 to 1. Defaults to 0.6.
+            max_intensity (int): Maximum intensity of the heatmap. Defaults to 1.
+            dissipating (bool): True to dissipate the heatmap on zooming, False to disable dissipation.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            weights (list of float): List of weights corresponding to each data point. Each point has a weight
+                of 1 by default. Specifying a weight of N is equivalent to plotting the same point N times.
         
-        More info: https://developers.google.com/maps/documentation/javascript/reference/visualization#HeatmapLayerOptions
+        .. _RGBA: https://www.w3.org/TR/css-color-3/#rgba-color
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.448481, 14, apikey=apikey)
+
+            attractions = zip(*[
+                (37.769901, -122.498331),
+                (37.768645, -122.475328),
+                (37.771478, -122.468677),
+                (37.769867, -122.466102),
+                (37.767187, -122.467496),
+                (37.770104, -122.470436)
+            ])
+
+            gmap.heatmap(
+                *attractions,
+                radius=40,
+                weights=[5, 1, 1, 1, 3, 1],
+                gradient=[(0, 0, 255, 0), (0, 255, 0, 0.9), (255, 0, 0, 1)]
+            )
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.heatmap.png
         '''
         # Try to give anyone using threshold a heads up.
         if threshold is not None:
-            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'maxIntensity'.", FutureWarning)
+            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'max_intensity'.", FutureWarning)
         else:
             threshold = 10
             
@@ -322,7 +673,7 @@ class GoogleMapPlotter(object):
         settings['radius'] = radius
         settings['gradient'] = gradient
         settings['opacity'] = opacity
-        settings['maxIntensity'] = maxIntensity
+        settings['max_intensity'] = max_intensity
         settings['dissipating'] = dissipating
 
         if weights is None:
@@ -337,24 +688,25 @@ class GoogleMapPlotter(object):
         '''
         Overlay an image from a given URL onto the map.
 
-        For more info, see `Google Maps <https://developers.google.com/maps/documentation/javascript/groundoverlays>`_.
+        Args:
+            url (str): URL of image to overlay.
+            bounds (dict): Image bounds, as a dict of the form ``{'north':, 'south':, 'east':, 'west':}``.
 
-        :param url: URL of image to overlay.
-        :type url: str
+        Optional:
 
-        :param bounds: Image bounds, as a dict of the form ``{'north':, 'south':, 'east':, 'west':}``.
-        :type bounds: dict
-
-        :param opacity: (optional) Opacity of the overlay, expressed as a number between 0 and 1. Defaults to 1.
-        :type opacity: float
+        Args:
+            opacity (float): Opacity of the overlay, ranging from 0 to 1. Defaults to 1.0.
 
         Usage::
 
             import gmplot
             apikey = '' # (your API key here)
             gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 12, apikey=apikey)
+
+            url = 'http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg'
             bounds = {'north': 37.832285, 'south': 37.637336, 'east': -122.346922, 'west': -122.520364}
-            gmap.ground_overlay('http://explore.museumca.org/creeks/images/TopoSFCreeks.jpg', bounds)
+            gmap.ground_overlay(url, bounds, opacity=0.5)
+
             gmap.draw("map.html")
 
         .. image:: GoogleMapPlotter.ground_overlay.png
@@ -362,6 +714,49 @@ class GoogleMapPlotter(object):
         self.ground_overlays.append((url, bounds, opacity))
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
+        '''
+        Plot a polygon.
+
+        Args:
+            lats (list of float): Latitudes.
+            lngs (list of float): Longitudes.
+
+        Optional:
+
+        Args:
+            color/c/edge_color/ec (str): Color of the polygon's edge.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the polygon's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the polygon's edge, in pixels. Defaults to 1.
+            alpha/face_alpha/fa (float): Opacity of the polygon's face, ranging from 0 to 1. Defaults to 0.3.
+            color/c/face_color/fc (str): Color of the polygon's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.448481, 14, apikey=apikey)
+
+            golden_gate_park = zip(*[
+                (37.771269, -122.511015),
+                (37.773495, -122.464830),
+                (37.774797, -122.454538),
+                (37.771988, -122.454018),
+                (37.773646, -122.440979),
+                (37.772742, -122.440797),
+                (37.771096, -122.453889),
+                (37.768669, -122.453518),
+                (37.766227, -122.460213),
+                (37.764028, -122.510347)
+            ])
+
+            gmap.polygon(*golden_gate_park, face_color='pink', edge_color='cornflowerblue', edge_width=5)
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.polygon.png
+        '''
         color = color or c
         kwargs.setdefault("color", color)
         settings = self._process_kwargs(kwargs)
@@ -370,18 +765,61 @@ class GoogleMapPlotter(object):
 
     def draw(self, file):
         '''
-        Create the HTML file (which includes one Google Map and all elements to be rendered).
+        Draw the HTML map to a file.
 
-        :param file: File to write to, as a file path.
+        Args:
+            file (str): File to write to, as a file path.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.draw.png
         '''
-
         with open(file, 'w') as f:
             with _Writer(f) as w:
                 self._write_html(w)
 
     def get(self):
-        '''Return the HTML map as a string (which includes one Google Map and all elements to be rendered).'''
+        '''
+        Return the HTML map as a string.
 
+        Returns:
+            str: HTML map.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+            print(gmap.get())
+
+        .. code-block:: html
+            
+            -> <html>
+               <head>
+               <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+               <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+               <title>Google Maps - gmplot</title>
+               <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization"></script>
+               <script type="text/javascript">
+                   function initialize() {
+                       var map = new google.maps.Map(document.getElementById("map_canvas"), {
+                           zoom: 13,
+                           center: new google.maps.LatLng(37.766956, -122.438481)
+                       });
+
+                   }
+               </script>
+               </head>
+               <body style="margin:0px; padding:0px;" onload="initialize()">
+                   <div id="map_canvas" style="width: 100%; height: 100%;" />
+               </body>
+               </html>
+        '''
         with StringIO() as f:
             with _Writer(f) as w:
                 self._write_html(w)
@@ -395,9 +833,9 @@ class GoogleMapPlotter(object):
         '''
         Write the HTML map.
 
-        :param w: Writer used to write the HTML map.
+        Args:
+            w (_Writer): Writer used to write the HTML map.
         '''
-
         w.write('''
             <html>
             <head>
@@ -613,14 +1051,14 @@ class GoogleMapPlotter(object):
             w.indent()
             w.write('threshold: %d,' % settings_dict['threshold'])
             w.write('radius: %d,' % settings_dict['radius'])
-            w.write('maxIntensity: %d,' % settings_dict['maxIntensity'])
+            w.write('maxIntensity: %d,' % settings_dict['max_intensity'])
             w.write('opacity: %f,' % settings_dict['opacity'])
             w.write('dissipating: %s,' % ('true' if settings_dict['dissipating'] else 'false'))
             if settings_dict['gradient']:
                 w.write('gradient: [')
                 w.indent()
                 for r, g, b, a in settings_dict['gradient']:
-                    w.write('"rgba(%d, %d, %d, %d)",' % (r, g, b, a))
+                    w.write('"rgba(%d, %d, %d, %f)",' % (r, g, b, a))
                 w.dedent()
                 w.write('],')
             w.write('map: map,')

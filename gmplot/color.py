@@ -167,20 +167,24 @@ def _is_valid_hex_color(color):
     '''
     Return whether or not a given color is a valid hex color.
 
-    :param color: Color to check.
-    :return: True if the given color is a valid hex color, False otherwise.
-    '''
+    Args:
+        color (str): Color to check.
 
+    Returns:
+        bool: True if the given color is a valid hex color, False otherwise.
+    '''
     return bool(isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color))
 
 def _get_hex_color_code(color):
     '''
     Return the hex color code for a given color.
 
-    :param color: Color of interest. Can be in hex ('#00FFFF'), a named color ('cyan'), or a matplotlib-style color ('c').
-    :return: Hex color code for the given color.
-    '''
+    Args:
+        color (str): Color of interest. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
 
+    Returns:
+        str: Hex color code for the given color.
+    '''
     if not _is_valid_hex_color(color):
         color = _MATPLOTLIB_COLOR_MAP.get(color, color)
 
