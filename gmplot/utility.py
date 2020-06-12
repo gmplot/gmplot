@@ -95,8 +95,13 @@ class _GenerateDocFiles(object):
             if name[0] == '_':
                 continue
 
-            # Skip items that don't have a docstring of their own:
-            if item.__doc__ is None or item.__doc__ == getattr(getattr(item, '__class__', None), '__doc__', None):
+            # Get the bound form of the element's item, if applicable
+            # (this ensures that the actual item's docstring is read below):
+            if hasattr(item, '__get__'):
+                item = item.__get__(element)
+
+            # Skip items that don't have a docstring:
+            if item.__doc__ is None:
                 continue
 
             # Get this item's ancestry:
