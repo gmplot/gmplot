@@ -1,6 +1,6 @@
 import unittest
 import warnings
-from gmplot.color import _is_valid_hex_color, _get_hex_color_code
+from gmplot.color import _is_valid_hex_color, _get_hex_color
 
 class ColorTests(unittest.TestCase):
     def setUp(self):
@@ -33,7 +33,7 @@ class ColorTests(unittest.TestCase):
     def test_get_hex_color_code(self):
         # Test valid aliases of red:
         for color in ['r', 'red', '#FF0000']:
-            self.assertEqual(_get_hex_color_code(color), '#FF0000', "'%s' should be a valid alias for 'red'" % color)
+            self.assertEqual(_get_hex_color(color), '#FF0000', "'%s' should be a valid alias for 'red'" % color)
 
         # Test invalid colours:
         INVALID_COLORS = [
@@ -45,6 +45,6 @@ class ColorTests(unittest.TestCase):
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
 
-                self.assertEqual(_get_hex_color_code(color), '#000000', "'%s' should be an invalid color" % color)
+                self.assertEqual(_get_hex_color(color), '#000000', "'%s' should be an invalid color" % color)
                 self.assertEqual(len(w), 1, "'%s' should raise a single warning" % color)
                 self.assertTrue(issubclass(w[-1].category, UserWarning), "'%s' should raise a 'UserWarning'" % color)

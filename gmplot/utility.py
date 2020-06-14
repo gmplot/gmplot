@@ -27,6 +27,30 @@ if sys.version_info.major == 2:
 else:
     from io import StringIO # pragma: no coverage
 
+def _get_value(dict, keys, default=None, get_key=False):
+    '''
+    Get the value of any of the provided keys.
+
+    Args:
+        dict (dict): Dict to obtain the value from.
+        keys (list of str): Keys of interest, in order of preference.
+
+    Optional:
+    
+    Args:
+        default: Value to return if none of the keys have a value. Defaults to None.
+        get_key: Whether or not to also return the key associated with the returned value. Defaults to False.
+
+    Returns:
+        any or (str, any): Value of the first valid key, or a tuple of the key and its value if ``get_key`` is True.
+            If the default value is returned, the key is None.
+    '''
+    for key in keys:
+        value = dict.get(key)
+        if value is not None:
+            return value if not get_key else (key, value)
+    return default if not get_key else (None, default)
+
 def _get_fresh_path(relative_path):
     '''
     Delete the contents of a given relative path then get its absolute path.
