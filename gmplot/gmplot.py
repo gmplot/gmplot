@@ -10,13 +10,15 @@ import math
 
 from collections import namedtuple
 
-from gmplot.color import _get_hex_color_code
+from gmplot.color import _get_hex_color
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
-from gmplot.utility import StringIO, _INDENT_LEVEL
+from gmplot.utility import StringIO, _get_value, _INDENT_LEVEL
 from gmplot.writer import _Writer
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
 # TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
+
+_ArgInfo = namedtuple('ArgInfo', ['arguments', 'default'])
 
 class InvalidSymbolError(Exception):
     pass
@@ -65,8 +67,8 @@ class _Route(object):
         '''
         self.origin = origin
         self.destination = destination
-        self.travel_mode = kwargs.get('travel_mode', 'DRIVING').upper()
-        self.waypoints = kwargs.get('waypoints', [])
+        self.travel_mode = _get_value(kwargs, ['travel_mode'], 'DRIVING').upper()
+        self.waypoints = _get_value(kwargs, ['waypoints'], [])
 
     def write(self, w):
         '''
@@ -181,12 +183,12 @@ class GoogleMapPlotter(object):
         self.ground_overlays = []
         self.gridsetting = None
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        self.title = kwargs.get('title', 'Google Maps - gmplot')
+        self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._routes = []
-        self._map_styles = kwargs.get('map_styles', [])
-        self._tilt = kwargs.get('tilt') 
-        self._scale_control = kwargs.get('scale_control', False)
-        self._fit_bounds = kwargs.get('fit_bounds')
+        self._map_styles = _get_value(kwargs, ['map_styles'], [])
+        self._tilt = _get_value(kwargs, ['tilt'])
+        self._scale_control = _get_value(kwargs, ['scale_control'], False)
+        self._fit_bounds = _get_value(kwargs, ['fit_bounds'])
 
     @classmethod
     def from_geocode(cls, location, zoom=13, apikey=''):
@@ -286,7 +288,7 @@ class GoogleMapPlotter(object):
         '''
         self.gridsetting = [lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment]
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None):
+    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None, **kwargs):
         '''
         Display a marker.
 
@@ -316,7 +318,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.marker.png
         '''
-        self.points.append((lat, lng, _get_hex_color_code(c or color), title, precision, label))
+        self.points.append((lat, lng, c or color, title, precision, label))
 
     def directions(self, origin, destination, **kwargs):
         '''
@@ -369,13 +371,19 @@ class GoogleMapPlotter(object):
         Optional:
 
         Args:
-            color/c (str or list of str): Color of each point. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            color/c/edge_color/ec (str or list of str):
+                Color of each point. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             size/s (int or list of int): Size of each point, in meters (symbols only). Defaults to 40.
             marker (bool or list of bool): True to plot points as markers, False to plot them as symbols. Defaults to True.
             symbol (str or list of str): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
             title (str or list of str): Hover-over title of each point (markers only).
             label (str or list of str): Label displayed on each point (markers only).
             precision (int or list of int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            alpha/face_alpha/fa (float or list of float):
+                Opacity of each point's face, ranging from 0 to 1 (symbols only). Defaults to 0.3.
+            alpha/edge_alpha/ea (float or list of float):
+                Opacity of each point's edge, ranging from 0 to 1 (symbols only). Defaults to 1.0.
+            edge_width/ew (int or list of int): Width of each point's edge, in pixels (symbols only). Defaults to 1.
 
         Usage::
 
@@ -406,58 +414,54 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.scatter.png
         '''
-        # TODO: Simply adding parameters below is unsustainable - need a better way to handle an arbitrary number of parameters.
+        ARG_MAP = {
+            'color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], '#000000'),
+            'size': _ArgInfo(['size', 's'], 40),
+            'marker': _ArgInfo(['marker'], None),
+            'symbol': _ArgInfo(['symbol'], None),
+            'title': _ArgInfo(['title'], None),
+            'label': _ArgInfo(['label'], None),
+            'precision': _ArgInfo(['precision'], 6),
+            'face_alpha': _ArgInfo(['alpha', 'face_alpha', 'fa'], 0.3),
+            'edge_alpha': _ArgInfo(['alpha', 'edge_alpha', 'ea'], 1.0),
+            'edge_width': _ArgInfo(['edge_width', 'ew'], 1)
+        }
+        # This links the draw-related settings to the arguments passed into this function.
+        # Note that some settings can be set through more than one argument.
+        # If no arguments are passed in for a given setting, its defined default is used.
 
-        # Process the kwargs:
-        kwargs["color"] = color or c
-        settings = self._process_kwargs(kwargs)
+        if len(lats) != len(lngs):
+            raise ValueError("Number of latitudes and longitudes don't match!")
 
-        # Define a lambda that copies a single value into a list of some given length
-        # (if the value is already a list, leave it alone):
-        extend = lambda value, length: value if isinstance(value, list) else [value] * length
+        # Copy the formal arguments to kwargs:
+        kwargs.setdefault('color', color)
+        kwargs.setdefault('c', c)
+        kwargs.setdefault('size', size)
+        kwargs.setdefault('s', s)
+        kwargs.setdefault('marker', marker)
+        kwargs.setdefault('symbol', symbol)
+        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
 
-        # Extend the `color` parameter into a list...
-        colors = extend(settings['color'], len(lats))
-        if len(colors) != len(lats):
-            warnings.warn("`color`'s length doesn't match the number of points!")
+        # For each setting...
+        settings = dict()
+        for setting_name, arg_info in ARG_MAP.items():
 
-        # ...then remove it from `settings` since `settings['color']` should no longer be used:
-        settings.pop('color')
+            # ...attempt to set it from kwargs (if the value isn't a list, expand it into one):
+            argument_name, value = _get_value(kwargs, arg_info.arguments, arg_info.default, get_key=True)
+            settings[setting_name] = value if isinstance(value, list) else [value] * len(lats)
 
-        # Extend the `precision` parameter into a list...
-        precisions = extend(settings['precision'], len(lats))
-        if len(precisions) != len(lats):
-            warnings.warn("`precision`'s length doesn't match the number of points!")
+            # ...ensure that its length matches the number of points:
+            if len(settings[setting_name]) != len(lats):
+                raise ValueError("`%s`'s length doesn't match the number of points!" % argument_name)
 
-        # ...then remove it from `settings` since `settings['precision']` should no longer be used:
-        settings.pop('precision')
-
-        # Extend the other parameters:
-        markers = extend(marker, len(lats))
-        if len(markers) != len(lats):
-            warnings.warn("`marker`'s length doesn't match the number of points!")
-
-        titles = extend(kwargs.get('title'), len(lats))
-        if len(titles) != len(lats):
-            warnings.warn("`title`'s length doesn't match the number of points!")
-
-        labels = extend(kwargs.get('label'), len(lats))
-        if len(labels) != len(lats):
-            warnings.warn("`label`'s length doesn't match the number of points!")
-
-        sizes = extend(size or s or 40, len(lats))
-        if len(sizes) != len(lats):
-            warnings.warn("`size`'s length doesn't match the number of points!")
-
-        symbols = extend(symbol, len(lats))
-        if len(symbols) != len(lats):
-            warnings.warn("`symbol`'s length doesn't match the number of points!")
-
-        for lat, lng, color, marker, title, label, size, symbol, precision in zip(lats, lngs, colors, markers, titles, labels, sizes, symbols, precisions):
-            if marker:
-                self.marker(lat, lng, color=color, precision=precision, title=title, label=label)
+        # For each point, plot a marker or symbol with its corresponding settings:
+        for i, location in enumerate(zip(lats, lngs)):
+            point_settings = {setting_name: value[i] for (setting_name, value) in settings.items()}
+            
+            if point_settings.pop('marker'):
+                self.marker(*location, **point_settings)
             else:
-                self._add_symbol(Symbol(symbol, lat, lng, size), color=color, **settings) # TODO: Add remaining edge- and face-related symbol parameters.
+                self._add_symbol(Symbol(point_settings.pop('symbol'), *location, size=point_settings.pop('size')), **point_settings)
 
     def _add_symbol(self, symbol, **kwargs):
         '''
@@ -477,9 +481,13 @@ class GoogleMapPlotter(object):
             color/c/edge_color/ec (str): Color of the symbol's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
         '''
-        kwargs.setdefault('face_alpha', kwargs.pop('alpha', 0.5))
-        kwargs.setdefault('color', kwargs.pop('c', None))
-        self.symbols.append((symbol, self._process_kwargs(kwargs)))
+        self.symbols.append((symbol, {
+            'edge_alpha': _get_value(kwargs, ['edge_alpha', 'ea'], 1.0),
+            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
+            'face_alpha': _get_value(kwargs, ['face_alpha', 'alpha'], 0.5),
+            'face_color': _get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'),
+            'color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000')
+        }))
 
     def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
         '''
@@ -518,57 +526,6 @@ class GoogleMapPlotter(object):
         '''
         self._add_symbol(Symbol('o', lat, lng, radius), color=color, c=c, alpha=alpha, **kwargs)
 
-    def _process_kwargs(self, kwargs):
-        '''
-        Process the given kwargs into visualization settings.
-
-        Args:
-            kwargs (dict): Dict of keyworded arguments to be converted into visualization settings.
-
-        Returns:
-            Processed dict of settings.
-        '''
-        settings = dict()
-
-        # Remove all kwargs values of None (since they'll slip through the fallback lines below):
-        kwargs = {key:value for key, value in kwargs.items() if value is not None}
-
-        settings["edge_color"] = kwargs.get("color",
-                                 kwargs.get("edge_color",
-                                 kwargs.get("ec", "#000000")))
-
-        settings["edge_alpha"] = kwargs.get("alpha",
-                                 kwargs.get("edge_alpha",
-                                 kwargs.get("ea", 1.0)))
-
-        settings["edge_width"] = kwargs.get("edge_width",
-                                 kwargs.get("ew", 1.0))
-
-        settings["face_alpha"] = kwargs.get("alpha",
-                                 kwargs.get("face_alpha",
-                                 kwargs.get("fa", 0.3)))
-
-        settings["face_color"] = kwargs.get("color",
-                                 kwargs.get("face_color",
-                                 kwargs.get("fc", "#000000")))
-
-        settings["color"] = kwargs.get("color",
-                            kwargs.get("c", settings["edge_color"]))
-
-        settings["precision"] = kwargs.get("precision", 6)
-
-        for key, color in settings.items():
-            if 'color' in key:
-                if not isinstance(color, list):
-                    settings[key] = _get_hex_color_code(color)
-                else:
-                    settings[key] = []
-                    for single_color in color:
-                        settings[key].append(_get_hex_color_code(single_color))
-
-        settings["closed"] = kwargs.get("closed", None)
-        return settings
-
     def plot(self, lats, lngs, color=None, c=None, **kwargs):
         '''
         Plot a polyline.
@@ -606,11 +563,15 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.plot.png
         '''
-        color = color or c
         kwargs.setdefault("color", color)
-        settings = self._process_kwargs(kwargs)
-        path = zip(lats, lngs)
-        self.paths.append((path, settings))
+        kwargs.setdefault("c", c)
+
+        self.paths.append((zip(lats, lngs), {
+            'color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
+            'edge_alpha': _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0),
+            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
+            'precision': _get_value(kwargs, ['precision'], 6)
+        }))
 
     def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, max_intensity=1, dissipating=True, precision=6, weights=None):
         '''
@@ -667,22 +628,18 @@ class GoogleMapPlotter(object):
             warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'max_intensity'.", FutureWarning)
         else:
             threshold = 10
-            
-        settings = {}
-        settings['threshold'] = threshold
-        settings['radius'] = radius
-        settings['gradient'] = gradient
-        settings['opacity'] = opacity
-        settings['max_intensity'] = max_intensity
-        settings['dissipating'] = dissipating
 
         if weights is None:
             weights = [self._HEATMAP_DEFAULT_WEIGHT] * len(lats)
 
-        heatmap_points = []
-        for lat, lng, weight in zip(lats, lngs, weights):
-            heatmap_points.append((lat, lng, weight))
-        self.heatmap_points.append((heatmap_points, settings, precision))
+        self.heatmap_points.append((zip(lats, lngs, weights), {        
+            'threshold': threshold,
+            'radius': radius,
+            'gradient': gradient,
+            'opacity': opacity,
+            'max_intensity': max_intensity,
+            'dissipating': dissipating
+        }, precision))
 
     def ground_overlay(self, url, bounds, opacity=1.0):
         '''
@@ -757,11 +714,17 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.polygon.png
         '''
-        color = color or c
         kwargs.setdefault("color", color)
-        settings = self._process_kwargs(kwargs)
-        shape = zip(lats, lngs)
-        self.shapes.append((shape, settings))
+        kwargs.setdefault("c", c)
+        
+        self.shapes.append((zip(lats, lngs), {
+            'edge_color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
+            'edge_alpha': _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0),
+            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
+            'face_alpha': _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.3),
+            'face_color': _get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'),
+            'precision': _get_value(kwargs, ['precision'], 6)
+        }))
 
     def draw(self, file):
         '''
@@ -882,7 +845,11 @@ class GoogleMapPlotter(object):
         lng_end = self.gridsetting[4]
         lng_increment = self.gridsetting[5]
 
-        settings = self._process_kwargs({"color": "#000000"})
+        settings = {
+            'edge_width': 1.0,
+            'color': "#000000",
+            'precision': 6
+        }
 
         # Draw the grid's bounding box:
         self.write_polyline(w, [
@@ -948,6 +915,7 @@ class GoogleMapPlotter(object):
             w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache, label): # TODO: Bundle args into some Point or Marker class (counts as an API change).
+        color = _get_hex_color(color)
         marker_icon = 'marker_%s' % color[1:]
 
         get_marker_icon_path = lambda color: self.coloricon % color[1:]
@@ -994,10 +962,10 @@ class GoogleMapPlotter(object):
             lat=symbol.lat,
             long=symbol.long,
             size=symbol.size,
-            strokeColor=settings.get('color', settings.get('edge_color')),
+            strokeColor=_get_hex_color(settings.get('color')),
             strokeOpacity=settings.get('edge_alpha'),
             strokeWeight=settings.get('edge_width'),
-            fillColor=settings.get('face_color'),
+            fillColor=_get_hex_color(settings.get('face_color')),
             fillOpacity=settings.get('face_alpha')
         ))
         w.write()
@@ -1010,8 +978,9 @@ class GoogleMapPlotter(object):
         w.indent()
         w.write('clickable: %s,' % str(False).lower())
         w.write('geodesic: %s,' % str(True).lower())
-        w.write('strokeColor: "%s",' % settings.get('color', settings.get('edge_color')))
-        w.write('strokeOpacity: %f,' % settings.get('edge_alpha'))
+        w.write('strokeColor: "%s",' % _get_hex_color(settings.get('color')))
+        if settings.get('edge_alpha', None) is not None:
+            w.write('strokeOpacity: %f,' % settings['edge_alpha'])
         w.write('strokeWeight: %d,' % settings.get('edge_width'))
         w.write('map: map,')
         w.write('path: [')
@@ -1029,9 +998,9 @@ class GoogleMapPlotter(object):
         w.indent()
         w.write('clickable: %s,' % str(False).lower())
         w.write('geodesic: %s,' % str(True).lower())
-        w.write('fillColor: "%s",' % settings.get('face_color', settings.get('color')))
+        w.write('fillColor: "%s",' % _get_hex_color(settings.get('face_color')))
         w.write('fillOpacity: %f,' % settings.get('face_alpha'))
-        w.write('strokeColor: "%s",' % settings.get('edge_color', settings.get('color')))
+        w.write('strokeColor: "%s",' % _get_hex_color(settings.get('edge_color')))
         w.write('strokeOpacity: %f,' % settings.get('edge_alpha'))
         w.write('strokeWeight: %d,' % settings.get('edge_width'))
         w.write('map: map,')

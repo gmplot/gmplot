@@ -94,9 +94,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
     def test_scatter_length_mismatch(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            
+        with self.assertRaises(ValueError):
             map.scatter(self.PATH_3[0], self.PATH_3[1], 
                 color=['r','g','b'],
                 precision=[1,2],
@@ -106,10 +104,6 @@ class GoogleMapPlotterTest(unittest.TestCase):
                 size=[10,20],
                 symbol=['+','o','x','x','o']
             )
-
-            self.assertEqual(len(w), 7, "'scatter()' should raise 7 warnings")
-            for warning in w:
-                self.assertTrue(issubclass(warning.category, UserWarning), "'scatter()' should raise a 'UserWarning'")
 
     def test_invalid_symbol(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)

@@ -175,7 +175,7 @@ def _is_valid_hex_color(color):
     '''
     return bool(isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color))
 
-def _get_hex_color_code(color):
+def _get_hex_color(color):
     '''
     Return the hex color code for a given color.
 
