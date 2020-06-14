@@ -563,8 +563,13 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.plot.png
         '''
+        if len(lats) != len(lngs):
+            raise ValueError("Number of latitudes and longitudes don't match!")
+
+        # Copy the formal arguments to kwargs:
         kwargs.setdefault("color", color)
         kwargs.setdefault("c", c)
+        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
 
         self.paths.append((zip(lats, lngs), {
             'color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
@@ -629,10 +634,15 @@ class GoogleMapPlotter(object):
         else:
             threshold = 10
 
+        if len(lats) != len(lngs):
+            raise ValueError("Number of latitudes and longitudes don't match!")
+
         if weights is None:
             weights = [self._HEATMAP_DEFAULT_WEIGHT] * len(lats)
+        elif len(weights) != len(lats):
+            raise ValueError("`weights`' length doesn't match the number of points!")
 
-        self.heatmap_points.append((zip(lats, lngs, weights), {        
+        self.heatmap_points.append((zip(lats, lngs, weights), {
             'threshold': threshold,
             'radius': radius,
             'gradient': gradient,
@@ -714,8 +724,13 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.polygon.png
         '''
+        if len(lats) != len(lngs):
+            raise ValueError("Number of latitudes and longitudes don't match!")
+
+        # Copy the formal arguments to kwargs:
         kwargs.setdefault("color", color)
         kwargs.setdefault("c", c)
+        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
         
         self.shapes.append((zip(lats, lngs), {
             'edge_color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
