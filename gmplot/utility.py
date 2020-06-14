@@ -3,6 +3,7 @@ import os
 import shutil
 import inspect
 import warnings
+import base64
 
 _INDENT_LEVEL = 4
 _INDENT = ' ' * _INDENT_LEVEL
@@ -50,6 +51,19 @@ def _get_value(dict, keys, default=None, get_key=False):
         if value is not None:
             return value if not get_key else (key, value)
     return default if not get_key else (None, default)
+
+def _get_embeddable_image(path):
+    '''
+    Get an image as an embeddable base64 image URL.
+
+    Args:
+        path (str): Image path.
+
+    Returns:
+        str: Base64 image URL that can be embedded in a file.
+    '''
+    with open(path, 'rb') as f:
+        return 'data:image/png;base64,' + base64.b64encode(f.read()).decode()
 
 def _get_fresh_path(relative_path):
     '''
