@@ -7,10 +7,10 @@ Several plotting methods make creating exploratory map views effortless.
 
 To install: ``pip install gmplot``
 
-Documentation: `API Reference <https://github.com/gmplot/gmplot/wiki>`_
+Documentation (with examples): `API Reference <https://github.com/gmplot/gmplot/wiki>`_
 
-Example
--------
+Crash course
+------------
 
 .. code:: python
 
