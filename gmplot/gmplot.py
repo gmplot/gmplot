@@ -5,14 +5,13 @@ import math
 import os
 import requests
 import warnings
-import base64
 import math
 
 from collections import namedtuple
 
 from gmplot.color import _get_hex_color
 from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER
-from gmplot.utility import StringIO, _get_value, _INDENT_LEVEL
+from gmplot.utility import StringIO, _get_value, _get_embeddable_image, _INDENT_LEVEL
 from gmplot.writer import _Writer
 
 Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
@@ -97,6 +96,53 @@ class _Route(object):
                 }
             });
         ''')
+        w.write()
+
+class _Text(object):
+    '''For more info, see Google Maps' `Directions Service https://developers.google.com/maps/documentation/javascript/directions`_.'''
+    
+    def __init__(self, lat, lng, text, **kwargs):
+        '''
+        Args:
+            lat (float): Latitude of the text label.
+            lng (float): Longitude of the text label.
+            text (str): Text to display.
+
+        Optional:
+
+        Args:
+            color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+        '''
+        self.lat = lat
+        self.lng = lng
+        self.text = text
+        self.color = _get_value(kwargs, ['color', 'c'], '#000000')
+        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        # TODO: `coloricon` duplication is temporary until `GoogleMapPlotter`'s `coloricon` is made non-public.
+        #       Since that change (pulling `coloricon` out as a non-public const) counts as an API change, this
+        #       refactoring of `coloricon` will have to wait until the next major release.
+
+    def write(self, w):
+        '''
+        Write the text.
+
+        Args:
+            w (_Writer): Writer used to write the route.
+        '''
+        w.write('new google.maps.Marker({')
+        w.indent()
+        w.write('label: {')
+        w.indent()
+        w.write('text: "%s",' % self.text)
+        w.write('color: "%s",' % _get_hex_color(self.color))
+        w.write('fontWeight: "bold"')
+        w.dedent()
+        w.write('},')
+        w.write('icon: "%s",' % _get_embeddable_image(self.coloricon % 'clear'))
+        w.write('position: %s,' % _format_LatLng(self.lat, self.lng))
+        w.write('map: map')
+        w.dedent()
+        w.write('});')
         w.write()
 
 class GoogleMapPlotter(object):
@@ -185,6 +231,7 @@ class GoogleMapPlotter(object):
         self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._routes = []
+        self._text_labels = []
         self._map_styles = _get_value(kwargs, ['map_styles'], [])
         self._tilt = _get_value(kwargs, ['tilt'])
         self._scale_control = _get_value(kwargs, ['scale_control'], False)
@@ -263,6 +310,35 @@ class GoogleMapPlotter(object):
 
         latlng_dict = geocode['results'][0]['geometry']['location']
         return latlng_dict['lat'], latlng_dict['lng']
+
+    def text(self, lat, lng, text, **kwargs):
+        '''
+        Write a text label.
+
+        Args:
+            lat (float): Latitude of the text label.
+            lng (float): Longitude of the text label.
+            text (str): Text to display.
+
+        Optional:
+
+        Args:
+            color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+
+            gmap.text(37.793575, -122.464334, 'Presidio')
+            gmap.text(37.768442, -122.441472, 'Buena Vista Park', color='green')
+
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.text.png
+        '''
+        self._text_labels.append(_Text(lat, lng, text, **kwargs))
 
     def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment): # TODO: Replace start/end params with bounds parameter used elsewhere (counts as an API change).
         '''
@@ -835,6 +911,7 @@ class GoogleMapPlotter(object):
         self.write_heatmap(w)
         self.write_ground_overlay(w)
         [route.write(w) for route in self._routes]
+        [text.write(w) for text in self._text_labels]
         w.dedent()
         w.write('}')
         w.dedent()
@@ -940,14 +1017,11 @@ class GoogleMapPlotter(object):
             warnings.warn(" Marker color '%s' isn't supported." % color)
             marker_icon_path = get_marker_icon_path('#000000')
 
-        # If a color icon hasn't been loaded before, convert it to base64, then embed it in the script:
+        # If a color icon hasn't been loaded before, then embed it in the script:
         if color not in color_cache:
-            with open(marker_icon_path, 'rb') as f:
-                base64_icon = base64.b64encode(f.read()).decode()
-
             w.write('var %s = {' % marker_icon)
             w.indent()
-            w.write('url: "data:image/png;base64,%s",' % base64_icon)
+            w.write('url: "%s",' % _get_embeddable_image(marker_icon_path)) 
             w.write('labelOrigin: new google.maps.Point(10, 11)') # TODO: Avoid hardcoded label origin.
             w.dedent()
             w.write('};')
