@@ -236,6 +236,7 @@ class GoogleMapPlotter(object):
         self._tilt = _get_value(kwargs, ['tilt'])
         self._scale_control = _get_value(kwargs, ['scale_control'], False)
         self._fit_bounds = _get_value(kwargs, ['fit_bounds'])
+        self._num_info_markers = 0
 
     @classmethod
     def from_geocode(cls, location, zoom=13, apikey=''):
@@ -379,6 +380,9 @@ class GoogleMapPlotter(object):
             title (str): Hover-over title of the marker.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
             label (str): Label displayed on the marker.
+            info_window (str): HTML content to be displayed in a pop-up `info window`_.
+
+        .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
 
         Usage::
 
@@ -386,7 +390,7 @@ class GoogleMapPlotter(object):
             apikey = '' # (your API key here)
             gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
 
-            gmap.marker(37.793575, -122.464334, label='H')
+            gmap.marker(37.793575, -122.464334, label='H', info_window="<a href='https://www.presidio.gov/'>The Presidio</a>")
             gmap.marker(37.768442, -122.441472, color='green', title='Buena Vista Park')
             gmap.marker(37.783333, -122.439494, precision=2, color='#FFD700')
 
@@ -394,7 +398,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.marker.png
         '''
-        self.points.append((lat, lng, c or color, title, precision, label))
+        self.points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window')))
 
     def directions(self, origin, destination, **kwargs):
         '''
@@ -966,8 +970,9 @@ class GoogleMapPlotter(object):
 
     def write_points(self, w):
         color_cache = set()
+        self._num_info_markers = 0 # TODO: Instead of resetting the count here, point writing should be refactored into its own class (counts as an API change).
         for point in self.points:
-            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5])
+            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6]) # TODO: Not maintainable.
 
     def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
         for symbol, settings in self.symbols:
@@ -1006,9 +1011,9 @@ class GoogleMapPlotter(object):
             w.write('map.fitBounds(%s);' % json.dumps(self._fit_bounds))
             w.write()
 
-    def write_point(self, w, lat, lng, color, title, precision, color_cache, label): # TODO: Bundle args into some Point or Marker class (counts as an API change).
+    def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
         color = _get_hex_color(color)
-        marker_icon = 'marker_%s' % color[1:]
+        marker_icon = 'marker_icon_%s' % color[1:]
 
         get_marker_icon_path = lambda color: self.coloricon % color[1:]
         marker_icon_path = get_marker_icon_path(color)
@@ -1028,6 +1033,12 @@ class GoogleMapPlotter(object):
             w.write()
             color_cache.add(color)
 
+        # If this marker should have an info window, give it a unique name:
+        if info_window is not None:
+            marker = 'info_marker_%d' % self._num_info_markers
+            w.write('var %s = ' % marker, end_in_newline=False)
+
+        # Write the actual marker:
         w.write('new google.maps.Marker({')
         w.indent()
         if title is not None:
@@ -1040,6 +1051,24 @@ class GoogleMapPlotter(object):
         w.dedent()
         w.write('});')
         w.write()
+
+        # If an info window is specified, write it:
+        if info_window is not None:
+            w.write('''
+            var info_window_{id} = new google.maps.InfoWindow({{
+                content: '{content}'
+            }});
+
+            {marker}.addListener('click', function() {{
+                info_window_{id}.open(map, {marker});
+            }});
+            '''.format(
+                id=self._num_info_markers,
+                marker=marker,
+                content=info_window.replace("'", "\\'").replace("\n", "\\n") # (escape single quotes and newlines)
+            ))
+            w.write()
+            self._num_info_markers += 1
 
     def write_symbol(self, w, symbol, settings):
         try:
@@ -1159,7 +1188,7 @@ if __name__ == "__main__": # pragma: no coverage
     mymap.marker(37.428, -122.146, "cornflowerblue")
     mymap.marker(37.429, -122.144, "k")
     lat, lng = mymap.geocode("Stanford University", apikey)
-    mymap.marker(lat, lng, "red")
+    mymap.marker(lat, lng, "red", info_window="<a href='https://www.stanford.edu/'>Stanford University</a>")
     mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
