@@ -2,9 +2,11 @@
 
 name: publish-docs
 
-on: # TODO: Have this run on new releases.
+on:
   repository_dispatch:
     types: publish-docs
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -16,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: '3.x'
           
       - name: Install Sphinx
         run: |

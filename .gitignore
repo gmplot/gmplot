@@ -4,6 +4,7 @@
 .idea
 mymap.html
 dist
+build
 gmplot.egg-info
 
 # Ignore coverage-related files:
