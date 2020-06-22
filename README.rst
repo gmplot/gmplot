@@ -52,7 +52,7 @@ Crash course
     # Draw the map:
     gmap.draw('map.html')
 
-.. image:: docs/images/README_Example.png
+.. image:: https://github.com/gmplot/gmplot/blob/master/docs/images/README_Example.png
 
 ----
 
