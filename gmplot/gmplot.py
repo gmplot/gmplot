@@ -227,6 +227,61 @@ class _Marker(object):
         w.write('});')
         w.write()
 
+class _MarkerDropper(object):
+    '''
+    Handler that drops markers on map clicks.
+
+    The markers can be deleted when clicked on.
+    '''
+    _MARKER_NAME = 'dropped_marker'
+    _EVENT_OBJECT_NAME = 'event'
+
+    def __init__(self, color, **kwargs):
+        '''
+        Args:
+            color (str): Color of the markers to be dropped.
+
+        Optional:
+
+        Args:
+            title (str): Hover-over title of the markers to be dropped.
+            label (str): Label displayed on the markers to be dropped.
+            draggable (bool): Whether or not the markers to be dropped are draggable.
+        '''
+        self._marker_icon = _MarkerIcon(color)
+        self._marker = _Marker(
+            '%s.latLng' % self._EVENT_OBJECT_NAME,
+            name=self._MARKER_NAME,
+            title=kwargs.get('title'),
+            label=kwargs.get('label'),
+            icon=self._marker_icon.name,
+            draggable=kwargs.get('draggable')
+        )
+
+    def write(self, w, color_cache):
+        '''
+        Write the marker dropper.
+
+        Args:
+            w (_Writer): Writer used to write the marker dropper.
+            color_cache (set): Cache of colors written so far.
+        '''
+        # Write the marker icon (if it isn't written already).
+        self._marker_icon.write(w, color_cache)
+
+        # Write the marker-dropping handler:
+        w.write('map.addListener("click", function(%s) {' % self._EVENT_OBJECT_NAME)
+        w.indent()
+        self._marker.write(w)
+        w.write('''
+        {marker_name}.addListener('click', function() {{
+            {marker_name}.setMap(null);
+        }});
+        '''.format(marker_name=self._MARKER_NAME))
+        w.dedent()
+        w.write('});')
+        w.write()
+
 class _MarkerInfoWindow(object):
     def __init__(self, marker_name, content):
         '''
@@ -352,6 +407,7 @@ class GoogleMapPlotter(object):
         self._scale_control = _get_value(kwargs, ['scale_control'], False)
         self._fit_bounds = _get_value(kwargs, ['fit_bounds'])
         self._num_info_markers = 0
+        self._marker_dropper = None
 
     @classmethod
     def from_geocode(cls, location, zoom=13, apikey=''):
@@ -938,6 +994,38 @@ class GoogleMapPlotter(object):
             'precision': _get_value(kwargs, ['precision'], 6)
         }))
 
+    def enable_marker_dropping(self, color, **kwargs):
+        '''
+        Allows markers to be dropped onto the map when clicked.
+
+        Clicking on a dropped marker will delete it.
+        
+        Note: Calling this function multiple times will just overwrite the existing dropped marker settings.
+
+        Args:
+            color (str): Color of the markers to be dropped.
+
+        Optional:
+
+        Args:
+            title (str): Hover-over title of the markers to be dropped.
+            label (str): Label displayed on the markers to be dropped.
+            draggable (bool): Whether or not the markers to be dropped are `draggable`_.
+
+        .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
+
+        Usage::
+
+            import gmplot
+            apikey = '' # (your API key here)
+            gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
+            gmap.enable_marker_dropping('orange', draggable=True)
+            gmap.draw('map.html')
+
+        .. image:: GoogleMapPlotter.enable_marker_dropping.gif
+        '''
+        self._marker_dropper = _MarkerDropper(color, **kwargs)
+
     def draw(self, file):
         '''
         Draw the HTML map to a file.
@@ -1035,6 +1123,7 @@ class GoogleMapPlotter(object):
         self.write_ground_overlay(w)
         [route.write(w) for route in self._routes]
         [text.write(w) for text in self._text_labels]
+        if self._marker_dropper: self._marker_dropper.write(w, color_cache)
         w.dedent()
         w.write('}')
         w.dedent()
