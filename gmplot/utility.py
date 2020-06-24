@@ -345,6 +345,13 @@ def _pretty_format_markdown(directory):
         # TODO: This temporary fix can be removed once the linked change appears in sphinx-markdown-builder's next release:
         # https://github.com/codejamninja/sphinx-markdown-builder/pull/43
 
+        # Ensure that HTML output blocks get HTML highlighting:
+        for index, line in enumerate(lines):
+            if line.startswith('-> <html>') and index > 0 and lines[index - 1].startswith(CODE_LITERAL_SYMBOL):
+                lines[index - 1] = CODE_LITERAL_SYMBOL + 'html\n'
+        # TODO: This temporary fix can be removed once the linked change appears in sphinx-markdown-builder's next release:
+        # https://github.com/codejamninja/sphinx-markdown-builder/pull/43
+
         # Update the file:
         with open(directory + filename, 'w') as file:
             file.writelines(lines)
