@@ -472,6 +472,8 @@ class GoogleMapPlotter(object):
             location = gmplot.GoogleMapPlotter.geocode('Versailles, France', apikey=apikey)
             print(location)
 
+        .. code-block::
+
             -> (48.801408, 2.130122)
         '''
         geocode = requests.get(
