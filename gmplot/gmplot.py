@@ -31,6 +31,8 @@ def safe_iter(var): # TODO: Remove since unused (counts as API change).
     except TypeError:
         return [var]
 
+_COLOR_ICON_PATH = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+
 def _format_LatLng(lat, lng, precision=6): # TODO: Make static method of GoogleMapPlotter.
     '''
     Format the given latitude/longitude location as a Google Maps LatLng object.
@@ -64,10 +66,10 @@ class _Route(object):
             travel_mode (str): Travel mode. Defaults to 'DRIVING'.
             waypoints (list of (float, float)): Waypoints.
         '''
-        self.origin = origin
-        self.destination = destination
-        self.travel_mode = _get_value(kwargs, ['travel_mode'], 'DRIVING').upper()
-        self.waypoints = _get_value(kwargs, ['waypoints'], [])
+        self._origin = _format_LatLng(*origin)
+        self._destination = _format_LatLng(*destination)
+        self._travel_mode = _get_value(kwargs, ['travel_mode'], 'DRIVING').upper()
+        self._waypoints = [_format_LatLng(*waypoint) for waypoint in _get_value(kwargs, ['waypoints'], [])]
 
     def write(self, w):
         '''
@@ -78,16 +80,15 @@ class _Route(object):
         '''
         w.write('new google.maps.DirectionsService().route({')
         w.indent()
-        w.write('origin: %s,' % _format_LatLng(*self.origin))
-        w.write('destination: %s,' % _format_LatLng(*self.destination))
-        if self.waypoints:
+        w.write('origin: %s,' % self._origin)
+        w.write('destination: %s,' % self._destination)
+        if self._waypoints:
             w.write('waypoints: [')
             w.indent()
-            for waypoint in self.waypoints:
-                w.write('{location: %s, stopover: false},' % _format_LatLng(*waypoint))
+            [w.write('{location: %s, stopover: false},' % waypoint) for waypoint in self._waypoints]
             w.dedent()
             w.write('],')
-        w.write('travelMode: "%s"' % self.travel_mode)
+        w.write('travelMode: "%s"' % self._travel_mode)
         w.dedent()
         w.write('''  
             }, function(response, status) {
@@ -113,36 +114,147 @@ class _Text(object):
         Args:
             color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
         '''
-        self.lat = lat
-        self.lng = lng
-        self.text = text
-        self.color = _get_value(kwargs, ['color', 'c'], '#000000')
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
-        # TODO: `coloricon` duplication is temporary until `GoogleMapPlotter`'s `coloricon` is made non-public.
-        #       Since that change (pulling `coloricon` out as a non-public const) counts as an API change, this
-        #       refactoring of `coloricon` will have to wait until the next major release.
+        self._position = _format_LatLng(lat, lng)
+        self._text = text
+        self._color = _get_hex_color(_get_value(kwargs, ['color', 'c'], '#000000'))
+        self._icon = _get_embeddable_image(_COLOR_ICON_PATH % 'clear')
 
     def write(self, w):
         '''
         Write the text.
 
         Args:
-            w (_Writer): Writer used to write the route.
+            w (_Writer): Writer used to write the text.
         '''
         w.write('new google.maps.Marker({')
         w.indent()
         w.write('label: {')
         w.indent()
-        w.write('text: "%s",' % self.text)
-        w.write('color: "%s",' % _get_hex_color(self.color))
+        w.write('text: "%s",' % self._text)
+        w.write('color: "%s",' % self._color)
         w.write('fontWeight: "bold"')
         w.dedent()
         w.write('},')
-        w.write('icon: "%s",' % _get_embeddable_image(self.coloricon % 'clear'))
-        w.write('position: %s,' % _format_LatLng(self.lat, self.lng))
+        w.write('icon: "%s",' % self._icon)
+        w.write('position: %s,' % self._position)
         w.write('map: map')
         w.dedent()
         w.write('});')
+        w.write()
+
+class _MarkerIcon(object):
+    def __init__(self, color):
+        '''
+        Args:
+            color (str): Color of the marker icon.
+        '''
+        self._color = _get_hex_color(color)
+
+        self.name = 'marker_icon_%s' % self._color[1:]
+        '''str: JavaScript name of the marker icon.'''
+
+        # Get this marker icon as an embeddable image:
+        get_marker_icon_path = lambda color: _COLOR_ICON_PATH % color[1:]
+        marker_icon_path = get_marker_icon_path(self._color)
+
+        if not os.path.exists(marker_icon_path):
+            warnings.warn(" Marker color '%s' isn't supported." % self._color)
+            marker_icon_path = get_marker_icon_path('#000000')
+
+        self._icon = _get_embeddable_image(marker_icon_path)
+
+    def write(self, w, color_cache):
+        '''
+        Write the marker icon (if it isn't already written).
+
+        Args:
+            w (_Writer): Writer used to write the marker icon.
+            color_cache (set): Cache of colors written so far.
+        '''
+        # If this marker icon hasn't been written before, then embed it in the script:
+        if self._color not in color_cache:
+            w.write('var %s = {' % self.name)
+            w.indent()
+            w.write('url: "%s",' % self._icon) 
+            w.write('labelOrigin: new google.maps.Point(10, 11)') # TODO: Avoid hardcoded label origin.
+            w.dedent()
+            w.write('};')
+            w.write()
+            color_cache.add(self._color)
+
+class _Marker(object):
+    def __init__(self, position, **kwargs):
+        '''
+        Args:
+            position (str): JavaScript code that represents the position of the marker.
+
+        Optional:
+
+        Args:
+            name (str): JavaScript name of the marker.
+            title (str): Hover-over title of the marker.
+            label (str): Label displayed on the marker.
+            icon (str): JavaScript code that represents the icon.
+        '''
+        self._position = position
+        self._name = kwargs.get('name')
+        self._title = kwargs.get('title')
+        self._label = kwargs.get('label')
+        self._icon = kwargs.get('icon')
+
+    def write(self, w):
+        '''
+        Write the marker.
+
+        Args:
+            w (_Writer): Writer used to write the marker.
+        '''
+        if self._name is not None: w.write('var %s = ' % self._name, end_in_newline=False)
+
+        w.write('new google.maps.Marker({')
+        w.indent()
+        w.write('position: %s,' % self._position)
+
+        if self._title is not None: w.write('title: "%s",' % self._title)
+        if self._label is not None: w.write('label: "%s",' % self._label)
+        if self._icon is not None: w.write('icon: %s,' % self._icon)
+
+        w.write('map: map')
+        w.dedent()
+        w.write('});')
+        w.write()
+
+class _MarkerInfoWindow(object):
+    def __init__(self, marker_name, content):
+        '''
+        Args:
+            marker_name (str): JavaScript name of the marker that should display this info window.
+            content (str): HTML content to be displayed in this info window.
+        '''
+        self._marker_name = marker_name
+        self._content = content
+
+    def write(self, w, info_marker_index):
+        '''
+        Write the info window that attaches to the given marker on click.
+
+        Args:
+            w (_Writer): Writer used to write the info window.
+            info_marker_index (int): Index of this info window.
+        '''
+        w.write('''
+        var {info_window_name} = new google.maps.InfoWindow({{
+            content: '{content}'
+        }});
+
+        {marker_name}.addListener('click', function() {{
+            {info_window_name}.open(map, {marker_name});
+        }});
+        '''.format(
+            info_window_name='info_window_%d' % info_marker_index,
+            marker_name=self._marker_name,
+            content=self._content.replace("'", "\\'").replace("\n", "\\n") # (escape single quotes and newlines)
+        ))
         w.write()
 
 class GoogleMapPlotter(object):
@@ -228,7 +340,7 @@ class GoogleMapPlotter(object):
         self.heatmap_points = []
         self.ground_overlays = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png') # TODO: Unused; remove (counts as an API change).
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._routes = []
         self._text_labels = []
@@ -894,6 +1006,8 @@ class GoogleMapPlotter(object):
         Args:
             w (_Writer): Writer used to write the HTML map.
         '''
+        color_cache = set()
+
         w.write('''
             <html>
             <head>
@@ -908,7 +1022,7 @@ class GoogleMapPlotter(object):
         w.indent()
         self.write_map(w)
         self.write_grids(w)
-        self.write_points(w)
+        self.write_points(w, color_cache)
         self.write_paths(w)
         self.write_symbols(w)
         self.write_shapes(w)
@@ -968,8 +1082,9 @@ class GoogleMapPlotter(object):
             lng = lng_start + float(lng_index) * lng_increment
             self.write_polyline(w, [(lat_start, lng), (lat_end, lng)], settings)
 
-    def write_points(self, w):
-        color_cache = set()
+    def write_points(self, w, color_cache=set()):
+        # TODO: Having a mutable set as a default parameter is done on purpose for backward compatibility.
+        #       Should get rid of this in next major version (counts as an API change of course).
         self._num_info_markers = 0 # TODO: Instead of resetting the count here, point writing should be refactored into its own class (counts as an API change).
         for point in self.points:
             self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6]) # TODO: Not maintainable.
@@ -1012,63 +1127,24 @@ class GoogleMapPlotter(object):
             w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
-        color = _get_hex_color(color)
-        marker_icon = 'marker_icon_%s' % color[1:]
-
-        get_marker_icon_path = lambda color: self.coloricon % color[1:]
-        marker_icon_path = get_marker_icon_path(color)
-
-        if not os.path.exists(marker_icon_path):
-            warnings.warn(" Marker color '%s' isn't supported." % color)
-            marker_icon_path = get_marker_icon_path('#000000')
-
-        # If a color icon hasn't been loaded before, then embed it in the script:
-        if color not in color_cache:
-            w.write('var %s = {' % marker_icon)
-            w.indent()
-            w.write('url: "%s",' % _get_embeddable_image(marker_icon_path)) 
-            w.write('labelOrigin: new google.maps.Point(10, 11)') # TODO: Avoid hardcoded label origin.
-            w.dedent()
-            w.write('};')
-            w.write()
-            color_cache.add(color)
+        # Write the marker icon (if it isn't written already).
+        marker_icon = _MarkerIcon(color)
+        marker_icon.write(w, color_cache)
 
         # If this marker should have an info window, give it a unique name:
-        if info_window is not None:
-            marker = 'info_marker_%d' % self._num_info_markers
-            w.write('var %s = ' % marker, end_in_newline=False)
+        marker_name = ('info_marker_%d' % self._num_info_markers) if info_window is not None else None
 
         # Write the actual marker:
-        w.write('new google.maps.Marker({')
-        w.indent()
-        if title is not None:
-            w.write('title: "%s",' % title)
-        if label is not None:
-            w.write('label: "%s",' % label)
-        w.write('icon: %s,' % marker_icon)
-        w.write('position: %s,' % _format_LatLng(lat, lng, precision))
-        w.write('map: map')
-        w.dedent()
-        w.write('});')
-        w.write()
+        marker = _Marker(_format_LatLng(lat, lng, precision), name=marker_name, title=title, label=label, icon=marker_icon.name)
+        marker.write(w)
 
-        # If an info window is specified, write it:
+        # Write the marker's info window, if specified:
         if info_window is not None:
-            w.write('''
-            var info_window_{id} = new google.maps.InfoWindow({{
-                content: '{content}'
-            }});
-
-            {marker}.addListener('click', function() {{
-                info_window_{id}.open(map, {marker});
-            }});
-            '''.format(
-                id=self._num_info_markers,
-                marker=marker,
-                content=info_window.replace("'", "\\'").replace("\n", "\\n") # (escape single quotes and newlines)
-            ))
-            w.write()
+            marker_info_window = _MarkerInfoWindow(marker_name, info_window)
+            marker_info_window.write(w, self._num_info_markers)
             self._num_info_markers += 1
+
+        # TODO: When Point-writing is pulled into its own class, move _MarkerIcon, _Marker, and _MarkerInfoWindow initialization into _Point's constructor.
 
     def write_symbol(self, w, symbol, settings):
         try:
