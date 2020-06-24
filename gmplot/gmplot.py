@@ -195,12 +195,14 @@ class _Marker(object):
             title (str): Hover-over title of the marker.
             label (str): Label displayed on the marker.
             icon (str): JavaScript code that represents the icon.
+            draggable (bool): Whether or not the marker is draggable.
         '''
         self._position = position
         self._name = kwargs.get('name')
         self._title = kwargs.get('title')
         self._label = kwargs.get('label')
         self._icon = kwargs.get('icon')
+        self._draggable = kwargs.get('draggable')
 
     def write(self, w):
         '''
@@ -218,6 +220,7 @@ class _Marker(object):
         if self._title is not None: w.write('title: "%s",' % self._title)
         if self._label is not None: w.write('label: "%s",' % self._label)
         if self._icon is not None: w.write('icon: %s,' % self._icon)
+        if self._draggable is not None: w.write('draggable: %s,' % str(self._draggable).lower())
 
         w.write('map: map')
         w.dedent()
@@ -493,8 +496,10 @@ class GoogleMapPlotter(object):
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
             label (str): Label displayed on the marker.
             info_window (str): HTML content to be displayed in a pop-up `info window`_.
+            draggable (bool): Whether or not the marker is `draggable`_.
 
         .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
+        .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
 
         Usage::
 
@@ -510,7 +515,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.marker.png
         '''
-        self.points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window')))
+        self.points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window'), kwargs.get('draggable')))
 
     def directions(self, origin, destination, **kwargs):
         '''
@@ -1087,7 +1092,7 @@ class GoogleMapPlotter(object):
         #       Should get rid of this in next major version (counts as an API change of course).
         self._num_info_markers = 0 # TODO: Instead of resetting the count here, point writing should be refactored into its own class (counts as an API change).
         for point in self.points:
-            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6]) # TODO: Not maintainable.
+            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6], point[7]) # TODO: Not maintainable.
 
     def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
         for symbol, settings in self.symbols:
@@ -1126,7 +1131,7 @@ class GoogleMapPlotter(object):
             w.write('map.fitBounds(%s);' % json.dumps(self._fit_bounds))
             w.write()
 
-    def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
+    def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None, draggable=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
         # Write the marker icon (if it isn't written already).
         marker_icon = _MarkerIcon(color)
         marker_icon.write(w, color_cache)
@@ -1135,7 +1140,7 @@ class GoogleMapPlotter(object):
         marker_name = ('info_marker_%d' % self._num_info_markers) if info_window is not None else None
 
         # Write the actual marker:
-        marker = _Marker(_format_LatLng(lat, lng, precision), name=marker_name, title=title, label=label, icon=marker_icon.name)
+        marker = _Marker(_format_LatLng(lat, lng, precision), name=marker_name, title=title, label=label, icon=marker_icon.name, draggable=draggable)
         marker.write(w)
 
         # Write the marker's info window, if specified:
