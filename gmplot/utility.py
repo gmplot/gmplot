@@ -98,8 +98,13 @@ def _write_to_sidebar(file, name, link=None, depth=0):
     link_content = name
     if link is not None and name != link:
         link_content += '|' + link
+    formatted_link = '[[%s]]' % link_content
 
-    file.write(_INDENT * depth + '* **[[%s]]**' % link_content)
+    if depth == 0:
+        file.write(_bookend(formatted_link, '**') + '\n')
+    else:
+        file.write(_INDENT * (depth - 1) + '* ' + formatted_link)
+        
     file.write('\n')
 
 class _GenerateDocFiles(object):
