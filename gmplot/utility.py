@@ -35,13 +35,13 @@ def _get_value(dict, keys, default=None, get_key=False):
 
     Args:
         dict (dict): Dict to obtain the value from.
-        keys (list of str): Keys of interest, in order of preference.
+        keys ([str]): Keys of interest, in order of preference.
 
     Optional:
     
     Args:
         default: Value to return if none of the keys have a value. Defaults to None.
-        get_key: Whether or not to also return the key associated with the returned value. Defaults to False.
+        get_key (bool): Whether or not to also return the key associated with the returned value. Defaults to False.
 
     Returns:
         any or (str, any): Value of the first valid key, or a tuple of the key and its value if ``get_key`` is True.
@@ -141,7 +141,7 @@ class _GenerateDocFiles(object):
 
         Args:
             element: Element to process.
-            ancestry (list of str): Current ancestry of the element, as a list ordered from its
+            ancestry ([str]): Current ancestry of the element, as a list ordered from its
                 highest ancestor to its immediate parent.
         '''
         for name, item in element.__dict__.items():

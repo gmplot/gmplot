@@ -64,7 +64,7 @@ class _Route(object):
 
         Args:
             travel_mode (str): Travel mode. Defaults to 'DRIVING'.
-            waypoints (list of (float, float)): Waypoints.
+            waypoints ([(float, float)]): Waypoints.
         '''
         self._origin = _format_LatLng(*origin)
         self._destination = _format_LatLng(*destination)
@@ -335,7 +335,7 @@ class GoogleMapPlotter(object):
             map_type (str): `Map type`_.
             apikey (str): Google Maps `API key`_.
             title (str): Title of the HTML file (as it appears in the browser tab).
-            map_styles (list of dicts): `Map styles`_. Requires `Maps JavaScript API`_.
+            map_styles ([dict]): `Map styles`_. Requires `Maps JavaScript API`_.
             tilt (int): `Tilt`_ of the map upon zooming in.
             scale_control (bool): Whether or not to display the `scale control`_. Defaults to False.
             fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
@@ -463,7 +463,7 @@ class GoogleMapPlotter(object):
         .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
 
         Returns:
-            (float, float): Latitude/longitude coordinates of the given
+            (float, float): Latitude/longitude coordinates of the given location string.
 
         Usage::
 
@@ -589,7 +589,7 @@ class GoogleMapPlotter(object):
 
         Args:
             travel_mode (str): `Travel mode`_. Defaults to 'DRIVING'.
-            waypoints (list of (float, float)): Waypoints to pass through.
+            waypoints ([(float, float)]): Waypoints to pass through.
 
         .. _Directions API: https://console.cloud.google.com/marketplace/details/google/directions-backend.googleapis.com
         .. _Travel mode: https://developers.google.com/maps/documentation/javascript/directions#TravelModes
@@ -620,25 +620,25 @@ class GoogleMapPlotter(object):
         Plot a collection of points.
 
         Args:
-            lats (list of float): Latitudes.
-            lngs (list of float): Longitudes.
+            lats ([float]): Latitudes.
+            lngs ([float]): Longitudes.
 
         Optional:
 
         Args:
-            color/c/edge_color/ec (str or list of str):
+            color/c/edge_color/ec (str or [str]):
                 Color of each point. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-            size/s (int or list of int): Size of each point, in meters (symbols only). Defaults to 40.
-            marker (bool or list of bool): True to plot points as markers, False to plot them as symbols. Defaults to True.
-            symbol (str or list of str): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
-            title (str or list of str): Hover-over title of each point (markers only).
-            label (str or list of str): Label displayed on each point (markers only).
-            precision (int or list of int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
-            alpha/face_alpha/fa (float or list of float):
+            size/s (int or [int]): Size of each point, in meters (symbols only). Defaults to 40.
+            marker (bool or [bool]): True to plot points as markers, False to plot them as symbols. Defaults to True.
+            symbol (str or [str]): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
+            title (str or [str]): Hover-over title of each point (markers only).
+            label (str or [str]): Label displayed on each point (markers only).
+            precision (int or [int]): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            alpha/face_alpha/fa (float or [float]):
                 Opacity of each point's face, ranging from 0 to 1 (symbols only). Defaults to 0.3.
-            alpha/edge_alpha/ea (float or list of float):
+            alpha/edge_alpha/ea (float or [float]):
                 Opacity of each point's edge, ranging from 0 to 1 (symbols only). Defaults to 1.0.
-            edge_width/ew (int or list of int): Width of each point's edge, in pixels (symbols only). Defaults to 1.
+            edge_width/ew (int or [int]): Width of each point's edge, in pixels (symbols only). Defaults to 1.
 
         Usage::
 
@@ -786,8 +786,8 @@ class GoogleMapPlotter(object):
         Plot a polyline.
 
         Args:
-            lats (list of float): Latitudes.
-            lngs (list of float): Longitudes.
+            lats ([float]): Latitudes.
+            lngs ([float]): Longitudes.
 
         Optional:
 
@@ -838,21 +838,21 @@ class GoogleMapPlotter(object):
         Plot a heatmap.
 
         Args:
-            lats (list of float): Latitudes.
-            lngs (list of float): Longitudes.
+            lats ([float]): Latitudes.
+            lngs ([float]): Longitudes.
 
         Optional:
 
         Args:
             threshold: (Deprecated; use `max_intensity` instead.)
             radius (int): Radius of influence for each data point, in pixels. Defaults to 10.
-            gradient (list of (int, int, int, float)): Color gradient of the heatmap, as a list of `RGBA`_ colors.
+            gradient ([(int, int, int, float)]): Color gradient of the heatmap, as a list of `RGBA`_ colors.
                 The color order defines the gradient moving towards the center of a point.
             opacity (float): Opacity of the heatmap, ranging from 0 to 1. Defaults to 0.6.
             max_intensity (int): Maximum intensity of the heatmap. Defaults to 1.
             dissipating (bool): True to dissipate the heatmap on zooming, False to disable dissipation.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
-            weights (list of float): List of weights corresponding to each data point. Each point has a weight
+            weights ([float]): List of weights corresponding to each data point. Each point has a weight
                 of 1 by default. Specifying a weight of N is equivalent to plotting the same point N times.
         
         .. _RGBA: https://www.w3.org/TR/css-color-3/#rgba-color
@@ -940,8 +940,8 @@ class GoogleMapPlotter(object):
         Plot a polygon.
 
         Args:
-            lats (list of float): Latitudes.
-            lngs (list of float): Longitudes.
+            lats ([float]): Latitudes.
+            lngs ([float]): Longitudes.
 
         Optional:
 
