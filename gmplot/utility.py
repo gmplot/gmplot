@@ -4,6 +4,7 @@ import shutil
 import inspect
 import warnings
 import base64
+import re
 
 _INDENT_LEVEL = 4
 _INDENT = ' ' * _INDENT_LEVEL
@@ -270,6 +271,23 @@ def _pretty_format_signature_header(signature_header):
 
     return new_header
 
+def _strip_character(string, character):
+    '''
+    Strip a character from a string without removing escaped characters.
+
+    Args:
+        string (str): String to process.
+        character (str): Character to strip from the string.
+
+    Returns:
+        str: String with the character stripped.
+    '''
+    if character == '':
+        return string
+
+    escaped_character = '\\' + character
+    return escaped_character.join([fragment.replace(character, '') for fragment in string.split(escaped_character)])
+
 def _pretty_format_markdown(directory):
     '''
     Pretty format all Markdown files in the given directory.
@@ -284,7 +302,7 @@ def _pretty_format_markdown(directory):
             continue
 
         # Read the file's contents:
-        with open(directory + filename, 'r') as file:
+        with open(directory + filename, mode='r', encoding='utf-8') as file:
             lines = file.readlines()
 
         # Skip if there's no content:
@@ -324,10 +342,29 @@ def _pretty_format_markdown(directory):
             else:
                 break # (do another pass since there might be another 'Optional/Parameters' pair)
             
-        # Get rid of stray asterisks:
+        # For each parameter line...
+        _PARAMETER_REGEX = '(%s)(%s)(%s)' % (
+            ' *.*? ', # Matches whatever comes before the type, like: '''  * **origin** '''
+            '\(.*\)', # Matches whatever makes up the type, like:     '''(*(**float**, **float**)*)'''
+            ' – .*'   # Matches whatever comes after the type, like:  ''' – Origin, in latitude/longitude.'''
+        )
+
         for index, line in enumerate(lines):
-            lines[index] = line.replace('** or **', '* or *').replace('of** (', 'of (')
-        # TODO: This is temporary until it's fixed in sphinx-markdown-builder.
+            match = re.match(_PARAMETER_REGEX, line, flags=re.DOTALL)
+            if match:
+                sections = list(match.groups())
+
+                # ...strip away the surrounding parentheses:
+                sections[1] = sections[1][1:-1]
+
+                # ...strip away all non-escaped asterisks:
+                sections[1] = _strip_character(sections[1], '*')
+
+                # ...format every type without touching any 'or' delimiters:
+                _OR_DELIMITER = ' or ' 
+                sections[1] = _OR_DELIMITER.join([_bookend(type_, '`') for type_ in sections[1].split(_OR_DELIMITER)])
+
+                lines[index] = ''.join(sections)
 
         # Ensure all literal blocks get Python highlighting:
         in_literal_block = False
@@ -353,5 +390,5 @@ def _pretty_format_markdown(directory):
         # https://github.com/codejamninja/sphinx-markdown-builder/pull/43
 
         # Update the file:
-        with open(directory + filename, 'w') as file:
+        with open(directory + filename, mode='w', encoding='utf-8') as file:
             file.writelines(lines)
