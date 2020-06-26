@@ -1,3 +1,5 @@
+### Encoding: utf-8 (needed for Python 2)
+
 import sys
 import os
 import shutil
