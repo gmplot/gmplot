@@ -1344,7 +1344,8 @@ class GoogleMapPlotter(object):
                     {bounds},
                     {{
                         opacity: {opacity},
-                        map: map
+                        map: map,
+                        clickable: false
                     }}
                 );
             '''.format(url=url, bounds=json.dumps(bounds), opacity=opacity))
