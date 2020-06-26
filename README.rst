@@ -1,5 +1,7 @@
-gmplot
-======
+gmplot |PyVersions|_
+====================
+.. |PyVersions| image:: https://img.shields.io/pypi/pyversions/gmplot?style=flat-square
+.. _PyVersions: https://www.python.org/
 
 A matplotlib-like interface to render all the data you'd like on top of Google Maps.
 
