@@ -456,6 +456,17 @@ def _pretty_format_markdown(directory):
         # TODO: This temporary fix can be removed once the linked change appears in sphinx-markdown-builder's next release:
         # https://github.com/codejamninja/sphinx-markdown-builder/pull/43
 
+        # Ensure embedded images fit to the page:
+        for index, line in enumerate(lines):
+            match = re.match('!\[image]\((.*)\)', line, flags=re.DOTALL)
+            if match:
+                link = match.groups()[0]
+
+                if link.startswith('\\') or link.startswith('./'): # (make the image path absolute if it's relative)
+                    link = 'https://github.com/gmplot/gmplot/wiki/%s' % link[1:]
+
+                lines[index] = '[[%s | width = 100000px]]\n' % link
+
         # Update the file:
         with open(directory + filename, mode='w', encoding='utf-8') as file:
             file.writelines(lines)
