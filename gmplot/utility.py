@@ -295,6 +295,8 @@ def _pretty_format_markdown(directory):
     Args:
         directory (str): Directory containing the Markdown files to format. 
     '''
+    _CODE_LITERAL_CHARACTER = '`'
+
     for filename in os.listdir(directory):
 
         # Skip non-Markdown files:
@@ -327,7 +329,7 @@ def _pretty_format_markdown(directory):
             index_parameters = None
             for index, line in enumerate(lines):
                 if index_optional is not None:
-                    if line == '* **Parameters**\n':
+                    if line == '* **Parameters**\n': 
                         index_parameters = index
                         break
                     elif line != '\n':
@@ -340,7 +342,7 @@ def _pretty_format_markdown(directory):
                 lines[index_optional] = '* **Optional Parameters**\n'
                 del lines[index_optional + 1 : index_parameters + 1]
             else:
-                break # (do another pass since there might be another 'Optional/Parameters' pair)
+                break # (don't do another pass if there are no more 'Optional/Parameters' pairs)
             
         # For each parameter line...
         _PARAMETER_REGEX = '(%s)(%s)(%s)' % (
@@ -362,18 +364,81 @@ def _pretty_format_markdown(directory):
 
                 # ...format every type without touching any 'or' delimiters:
                 _OR_DELIMITER = ' or ' 
-                sections[1] = _OR_DELIMITER.join([_bookend(type_, '`') for type_ in sections[1].split(_OR_DELIMITER)])
+                sections[1] = _OR_DELIMITER.join([_bookend(type_, _CODE_LITERAL_CHARACTER) for type_ in sections[1].split(_OR_DELIMITER)])
 
                 lines[index] = ''.join(sections)
 
+        # Merge the 'Return type' content (if any) with the'Returns' content (if any):
+        index_returns_header = None
+        index_return_type_header = None
+        for index, line in enumerate(lines):
+            if line == '* **Returns**\n':
+                index_returns_header = index
+            elif line == '* **Return type**\n':
+                index_return_type_header = index
+
+        if index_return_type_header is not None:
+            assert index_returns_header is not None, "'Returns' header must exist if 'Return type' header exists."
+
+            # Get the index of the 'Returns' content:
+            index_returns_content = None
+            start_index = index_returns_header + 1
+            for index, line in enumerate(lines[start_index:]):
+                if line == '* **Return type**\n':
+                    break # (if the 'Return type' header is reached, then there is no 'Returns' content)
+                elif not line.isspace():
+                    index_returns_content = start_index + index
+                    break
+
+            # Get the index of the 'Return type' content (which is guaranteed to exist):
+            index_return_type_content = None
+            start_index = index_return_type_header + 1
+            for index, line in enumerate(lines[start_index:]):
+                if not line.isspace():
+                    index_return_type_content = start_index + index
+                    break
+
+            _LINE_REGEX = '( *)(.*)(\n)'
+
+            # If there actually is 'Returns' content...
+            if index_returns_content is not None:
+
+                # ...get the return type from the 'Return type' section:
+                match = re.match(_LINE_REGEX, lines[index_return_type_content], flags=re.DOTALL)
+                assert match, "'Return type' header must have some content below it."
+                return_type = match.groups()[1]
+
+                # ...delete the 'Return type' header and the content that comes below it:
+                del lines[index_return_type_header : index_return_type_content + 1]
+
+                # ...prepend the return type to the 'Return' content.
+                match = re.match(_LINE_REGEX, lines[index_returns_content], flags=re.DOTALL)
+                assert match, "'Return' header must have some content below it."
+                sections = list(match.groups())
+                sections[1] = _bookend(return_type, _CODE_LITERAL_CHARACTER) + ' – ' + sections[1]
+                lines[index_returns_content] = ''.join(sections)
+
+            # Otherwise...
+            else:
+
+                # ...format the type as a code literal:
+                match = re.match(_LINE_REGEX, lines[index_return_type_content], flags=re.DOTALL)
+                assert match, "'Return type' header must have some content below it."
+                sections = list(match.groups())
+                sections[1] = _bookend(sections[1], _CODE_LITERAL_CHARACTER)
+                lines[index_return_type_content] = ''.join(sections)
+
+                # ...delete the 'Return type' header and the extra lines that come before it:
+                del lines[index_returns_header + 1 : index_return_type_header + 1]
+
         # Ensure all literal blocks get Python highlighting:
         in_literal_block = False
-        CODE_LITERAL_SYMBOL = '```'
+        _CODE_BLOCK_SYMBOL = '```'
         for index, line in enumerate(lines):
-            if line.startswith(CODE_LITERAL_SYMBOL):
+            if line.startswith(_CODE_BLOCK_SYMBOL):
                 if not in_literal_block:
                     in_literal_block = True
-                    lines[index] = CODE_LITERAL_SYMBOL + 'python\n'
+                    lines[index] = _CODE_BLOCK_SYMBOL + 'python\n'
                 else:
                     in_literal_block = False
         if in_literal_block:
@@ -384,8 +449,8 @@ def _pretty_format_markdown(directory):
 
         # Ensure that HTML output blocks get HTML highlighting:
         for index, line in enumerate(lines):
-            if line.startswith('-> <html>') and index > 0 and lines[index - 1].startswith(CODE_LITERAL_SYMBOL):
-                lines[index - 1] = CODE_LITERAL_SYMBOL + 'html\n'
+            if line.startswith('-> <html>') and index > 0 and lines[index - 1].startswith(_CODE_BLOCK_SYMBOL):
+                lines[index - 1] = _CODE_BLOCK_SYMBOL + 'html\n'
         # TODO: This temporary fix can be removed once the linked change appears in sphinx-markdown-builder's next release:
         # https://github.com/codejamninja/sphinx-markdown-builder/pull/43
 

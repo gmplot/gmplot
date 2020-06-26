@@ -426,7 +426,7 @@ class GoogleMapPlotter(object):
             apikey (str): Google Maps `API key`_.
 
         Returns:
-            :class:`GoogleMapPlotter` object.
+            :class:`GoogleMapPlotter`
 
         .. _Geocoding API: https://console.cloud.google.com/marketplace/details/google/geocoding-backend.googleapis.com
         .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
