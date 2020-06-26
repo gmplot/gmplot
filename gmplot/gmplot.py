@@ -506,7 +506,7 @@ class GoogleMapPlotter(object):
             gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
 
             gmap.text(37.793575, -122.464334, 'Presidio')
-            gmap.text(37.768442, -122.441472, 'Buena Vista Park', color='green')
+            gmap.text(37.766942, -122.441472, 'Buena Vista Park', color='blue')
 
             gmap.draw('map.html')
 
@@ -659,6 +659,7 @@ class GoogleMapPlotter(object):
                 *attractions,
                 color=['red', 'orange', 'yellow', 'green', 'blue', 'purple'],
                 s=60,
+                ew=2,
                 marker=[True, True, False, True, False, False],
                 symbol=[None, None, 'o', None, 'x', '+'],
                 title=['First', 'Second', None, 'Third', None, None],
