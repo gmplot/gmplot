@@ -14,7 +14,6 @@ setup(
     name = 'gmplot',
     version = __version__,
     author = 'gmplot contributors',
-    url = 'https://github.com/gmplot/gmplot',
     description = 'A matplotlib-like interface to plot data with Google Maps.',
     long_description=read('README.rst'),
     license='MIT',
@@ -23,6 +22,11 @@ setup(
     include_package_data=True,
     package_data = {
         'gmplot': ['markers/*.png'],
+    },
+    project_urls = {
+        'Documentation': 'https://github.com/gmplot/gmplot/wiki',
+        'Tracker': 'https://github.com/gmplot/gmplot/issues',
+        'Source': 'https://github.com/gmplot/gmplot'
     },
     install_requires=get_requirements('requirements.txt'),
 )
