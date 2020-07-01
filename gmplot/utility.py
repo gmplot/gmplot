@@ -12,6 +12,8 @@ _INDENT_LEVEL = 4
 _INDENT = ' ' * _INDENT_LEVEL
 # Note: This should match a single indent used in the actual source code.
 
+_COLOR_ICON_PATH = os.path.join(os.path.dirname(__file__), 'markers/%s.png')
+
 if sys.version_info.major == 2:
     from StringIO import StringIO as _StringIO
 
@@ -54,6 +56,24 @@ def _get_value(dict, keys, default=None, get_key=False):
         if value is not None:
             return value if not get_key else (key, value)
     return default if not get_key else (None, default)
+
+def _format_LatLng(lat, lng, precision=6):
+    '''
+    Format the given latitude/longitude location as a Google Maps LatLng object.
+
+    Args:
+        lat (float): Latitude.
+        lng (float): Longitude.
+
+    Optional:
+
+    Args:
+        precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+    Returns:
+        str: Formatted Google Maps LatLng object.
+    '''
+    return 'new google.maps.LatLng(%.*f, %.*f)' % (precision, lat, precision, lng)
 
 def _get_embeddable_image(path):
     '''
