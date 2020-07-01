@@ -62,14 +62,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
 
         # Test heatmap:
         map.heatmap(self.PATH_4[0], self.PATH_4[1], radius=40, weights=[1, 1, 1, 0.5, 0.5, 0.5, 1, 1, 1, 2, 2])
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
-            map.heatmap(self.PATH_3[0], self.PATH_3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
-
-            self.assertEqual(len(w), 1, "'heatmap()' should raise a single warning")
-            self.assertTrue(issubclass(w[-1].category, FutureWarning), "'heatmap()' should raise a 'FutureWarning'")
+        map.heatmap(self.PATH_3[0], self.PATH_3[1], radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
 
         # Test scatter:
         map.scatter(self.PATH_3[0], self.PATH_3[1], c='r', marker=[True, False, False, True])

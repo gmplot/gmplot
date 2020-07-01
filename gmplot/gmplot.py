@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import json
 import math
 import requests
-import warnings
 
 from collections import namedtuple
 
@@ -13,6 +12,7 @@ from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
 from gmplot.drawables.ground_overlay import _GroundOverlay
+from gmplot.drawables.heatmap import _Heatmap
 from gmplot.drawables.marker_dropper import _MarkerDropper
 from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
@@ -34,8 +34,6 @@ class GoogleMapPlotter(object):
     '''
     Plotter that draws on a Google Map.
     '''
-
-    _HEATMAP_DEFAULT_WEIGHT = 1
 
     def __init__(self, lat, lng, zoom, map_type='', apikey='', **kwargs):
         '''
@@ -110,7 +108,7 @@ class GoogleMapPlotter(object):
         self.shapes = []
         self.points = []
         self.symbols = []
-        self.heatmap_points = []
+        self._heatmaps = []
         self._ground_overlays = []
         self.gridsetting = None
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
@@ -548,7 +546,7 @@ class GoogleMapPlotter(object):
             'precision': _get_value(kwargs, ['precision'], 6)
         }))
 
-    def heatmap(self, lats, lngs, threshold=None, radius=10, gradient=None, opacity=0.6, max_intensity=1, dissipating=True, precision=6, weights=None):
+    def heatmap(self, lats, lngs, **kwargs):
         '''
         Plot a heatmap.
 
@@ -559,13 +557,12 @@ class GoogleMapPlotter(object):
         Optional:
 
         Args:
-            threshold: (Deprecated; use `max_intensity` instead.)
             radius (int): Radius of influence for each data point, in pixels. Defaults to 10.
             gradient ([(int, int, int, float)]): Color gradient of the heatmap, as a list of `RGBA`_ colors.
                 The color order defines the gradient moving towards the center of a point.
             opacity (float): Opacity of the heatmap, ranging from 0 to 1. Defaults to 0.6.
             max_intensity (int): Maximum intensity of the heatmap. Defaults to 1.
-            dissipating (bool): True to dissipate the heatmap on zooming, False to disable dissipation.
+            dissipating (bool): True to dissipate the heatmap on zooming, False to disable dissipation. Defaults to True.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
             weights ([float]): List of weights corresponding to each data point. Each point has a weight
                 of 1 by default. Specifying a weight of N is equivalent to plotting the same point N times.
@@ -598,28 +595,14 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.heatmap.png
         '''
-        # Try to give anyone using threshold a heads up.
-        if threshold is not None:
-            warnings.warn("The 'threshold' kwarg is deprecated, replaced in favor of 'max_intensity'.", FutureWarning)
-        else:
-            threshold = 10
-
         if len(lats) != len(lngs):
             raise ValueError("Number of latitudes and longitudes don't match!")
 
-        if weights is None:
-            weights = [self._HEATMAP_DEFAULT_WEIGHT] * len(lats)
-        elif len(weights) != len(lats):
+        weights = _get_value(kwargs, ['weights'])
+        if weights is not None and len(weights) != len(lats):
             raise ValueError("`weights`' length doesn't match the number of points!")
 
-        self.heatmap_points.append((zip(lats, lngs, weights), {
-            'threshold': threshold,
-            'radius': radius,
-            'gradient': gradient,
-            'opacity': opacity,
-            'max_intensity': max_intensity,
-            'dissipating': dissipating
-        }, precision))
+        self._heatmaps.append(_Heatmap(lats, lngs, **kwargs))
 
     def ground_overlay(self, url, bounds, **kwargs):
         '''
@@ -836,7 +819,7 @@ class GoogleMapPlotter(object):
         self.write_paths(w)
         self.write_symbols(w)
         self.write_shapes(w)
-        self.write_heatmap(w)
+        [heatmap.write(w) for heatmap in self._heatmaps]
         [ground_overlay.write(w) for ground_overlay in self._ground_overlays] # TODO: Avoid this duplication with different elements.
         [route.write(w) for route in self._routes]
         [text.write(w) for text in self._text_labels]
@@ -1011,37 +994,6 @@ class GoogleMapPlotter(object):
         w.write('});')
         w.write()
 
-    def write_heatmap(self, w):
-        for heatmap_points, settings_dict, precision in self.heatmap_points:
-            w.write('new google.maps.visualization.HeatmapLayer({')
-            w.indent()
-            w.write('threshold: %d,' % settings_dict['threshold'])
-            w.write('radius: %d,' % settings_dict['radius'])
-            w.write('maxIntensity: %d,' % settings_dict['max_intensity'])
-            w.write('opacity: %f,' % settings_dict['opacity'])
-            w.write('dissipating: %s,' % ('true' if settings_dict['dissipating'] else 'false'))
-            if settings_dict['gradient']:
-                w.write('gradient: [')
-                w.indent()
-                for r, g, b, a in settings_dict['gradient']:
-                    w.write('"rgba(%d, %d, %d, %f)",' % (r, g, b, a))
-                w.dedent()
-                w.write('],')
-            w.write('map: map,')
-            w.write('data: [')
-            w.indent()
-            for lat, lng, weight in heatmap_points:
-                location = _format_LatLng(lat, lng, precision)
-                if weight == self._HEATMAP_DEFAULT_WEIGHT:
-                    w.write('%s,' % location)
-                else:
-                    w.write('{location: %s, weight: %f},' % (location, weight)) 
-            w.dedent()
-            w.write(']')
-            w.dedent()
-            w.write('});')
-            w.write()
-
 if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
@@ -1064,8 +1016,8 @@ if __name__ == "__main__": # pragma: no coverage
     mymap.plot(path[0], path[1], "plum", edge_width=10)
     mymap.plot(path2[0], path2[1], "red")
     mymap.polygon(path3[0], path3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
-    mymap.heatmap(path4[0], path4[1], threshold=10, radius=40)
-    mymap.heatmap(path3[0], path3[1], threshold=10, radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
+    mymap.heatmap(path4[0], path4[1], radius=40)
+    mymap.heatmap(path3[0], path3[1], radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
     mymap.scatter(path4[0], path4[1], c='r', marker=True)
     mymap.scatter(path4[0], path4[1], s=90, marker=False, alpha=0.9, symbol='x', c='red', edge_width=4)
     # Get more points with:
