@@ -26,18 +26,21 @@ class _Text(object):
         Args:
             w (_Writer): Writer used to write the text.
         '''
-        w.write('new google.maps.Marker({')
-        w.indent()
-        w.write('label: {')
-        w.indent()
-        w.write('text: "%s",' % self._text)
-        w.write('color: "%s",' % self._color)
-        w.write('fontWeight: "bold"')
-        w.dedent()
-        w.write('},')
-        w.write('icon: "%s",' % self._icon)
-        w.write('position: %s,' % self._position)
-        w.write('map: map')
-        w.dedent()
-        w.write('});')
+        w.write('''
+            new google.maps.Marker({{
+                label: {{
+                    text: "{text}",
+                    color: "{color}",
+                    fontWeight: "bold"
+                }},
+                icon: "{icon}",
+                position: {position},
+                map: map
+            }});
+        '''.format(
+            text=self._text,
+            color=self._color,
+            icon=self._icon,
+            position=self._position
+        ))
         w.write()
