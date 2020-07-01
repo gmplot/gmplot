@@ -18,6 +18,7 @@ from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
 from gmplot.drawables.marker import _Marker
 from gmplot.drawables.polygon import _Polygon
+from gmplot.drawables.polyline import _Polyline
 from gmplot.drawables.route import _Route
 from gmplot.drawables.text import _Text
 
@@ -105,7 +106,6 @@ class GoogleMapPlotter(object):
         self.zoom = int(zoom)
         self.map_type = str(map_type)
         self.apikey = str(apikey)
-        self.paths = []
         self.points = []
         self.symbols = []
         self._drawables = []
@@ -491,7 +491,7 @@ class GoogleMapPlotter(object):
         '''
         self._add_symbol(_Symbol('o', lat, lng, radius), color=color, c=c, alpha=alpha, **kwargs)
 
-    def plot(self, lats, lngs, color=None, c=None, **kwargs):
+    def plot(self, lats, lngs, **kwargs):
         '''
         Plot a polyline.
 
@@ -531,17 +531,7 @@ class GoogleMapPlotter(object):
         if len(lats) != len(lngs):
             raise ValueError("Number of latitudes and longitudes don't match!")
 
-        # Copy the formal arguments to kwargs:
-        kwargs.setdefault("color", color)
-        kwargs.setdefault("c", c)
-        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
-
-        self.paths.append((zip(lats, lngs), {
-            'color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
-            'edge_alpha': _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0),
-            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
-            'precision': _get_value(kwargs, ['precision'], 6)
-        }))
+        self._drawables.append(_Polyline(lats, lngs, **kwargs))
 
     def heatmap(self, lats, lngs, **kwargs):
         '''
@@ -801,7 +791,6 @@ class GoogleMapPlotter(object):
         self.write_map(w)
         self.write_grids(w)
         self.write_points(w, color_cache)
-        self.write_paths(w)
         self.write_symbols(w)
         [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
@@ -837,25 +826,25 @@ class GoogleMapPlotter(object):
         }
 
         # Draw the grid's bounding box:
-        self.write_polyline(w, [
+        _Polyline(*zip(*[
             (lat_start, lng_start),
             (lat_end, lng_start),
             (lat_end, lng_end),
             (lat_start, lng_end),
             (lat_start, lng_start)
-        ], settings)
+        ]), **settings).write(w)
 
         get_num_divisions = lambda start, end, increment: int(math.ceil((end - start) / increment))
 
         # Draw the grid's latitudinal divisions:
         for lat_index in range(1, get_num_divisions(lat_start, lat_end, lat_increment)):
             lat = lat_start + float(lat_index) * lat_increment
-            self.write_polyline(w, [(lat, lng_start), (lat, lng_end)], settings)
+            _Polyline(*zip(*[(lat, lng_start), (lat, lng_end)]), **settings).write(w)
 
         # Draw the grid's longitudinal divisions: 
         for lng_index in range(1, get_num_divisions(lng_start, lng_end, lng_increment)):
             lng = lng_start + float(lng_index) * lng_increment
-            self.write_polyline(w, [(lat_start, lng), (lat_end, lng)], settings)
+            _Polyline(*zip(*[(lat_start, lng), (lat_end, lng)]), **settings).write(w)
 
     def write_points(self, w, color_cache=set()):
         # TODO: Having a mutable set as a default parameter is done on purpose for backward compatibility.
@@ -867,10 +856,6 @@ class GoogleMapPlotter(object):
     def write_symbols(self, w):
         for symbol, settings in self.symbols:
             self.write_symbol(w, symbol, settings)
-
-    def write_paths(self, w):
-        for path, settings in self.paths:
-            self.write_polyline(w, path, settings)
 
     def write_map(self, w):
         w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
@@ -930,26 +915,6 @@ class GoogleMapPlotter(object):
         ))
         w.write()
 
-    def write_polyline(self, w, path, settings):
-        w.write('new google.maps.Polyline({')
-        w.indent()
-        w.write('clickable: %s,' % str(False).lower())
-        w.write('geodesic: %s,' % str(True).lower())
-        w.write('strokeColor: "%s",' % _get_hex_color(settings.get('color')))
-        if settings.get('edge_alpha', None) is not None:
-            w.write('strokeOpacity: %f,' % settings['edge_alpha'])
-        w.write('strokeWeight: %d,' % settings.get('edge_width'))
-        w.write('map: map,')
-        w.write('path: [')
-        w.indent()
-        for coordinate in path:
-            w.write('%s,' % _format_LatLng(coordinate[0], coordinate[1], settings.get("precision")))
-        w.dedent()
-        w.write(']')
-        w.dedent()
-        w.write('});')
-        w.write()
-
 if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
@@ -969,8 +934,8 @@ if __name__ == "__main__": # pragma: no coverage
     path3 = [(37.433302 , 37.431257 , 37.427644 , 37.430303), (-122.14488, -122.133121, -122.137799, -122.148743)]
     path4 = [(37.423074, 37.422700, 37.422410, 37.422188, 37.422274, 37.422495, 37.422962, 37.423552, 37.424387, 37.425920, 37.425937),
          (-122.150288, -122.149794, -122.148936, -122.148142, -122.146747, -122.14561, -122.144773, -122.143936, -122.142992, -122.147863, -122.145953)]
-    mymap.plot(path[0], path[1], "plum", edge_width=10)
-    mymap.plot(path2[0], path2[1], "red")
+    mymap.plot(path[0], path[1], color="plum", edge_width=10)
+    mymap.plot(path2[0], path2[1], color="red")
     mymap.polygon(path3[0], path3[1], edge_color="cyan", edge_width=5, face_color="blue", face_alpha=0.1)
     mymap.heatmap(path4[0], path4[1], radius=40)
     mymap.heatmap(path3[0], path3[1], radius=40, dissipating=False, gradient=[(30,30,30,0), (30,30,30,1), (50, 50, 50, 1)])
