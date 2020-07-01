@@ -51,8 +51,8 @@ class GoogleMapPlotterTest(unittest.TestCase):
         map.circle(37.429, -122.145, 100, "#FF0000", ew=2)
 
         # Test plot:
-        map.plot(self.PATH_1[0], self.PATH_1[1], "plum", edge_width=10)
-        map.plot(self.PATH_2[0], self.PATH_2[1], "red")
+        map.plot(self.PATH_1[0], self.PATH_1[1], color="plum", edge_width=10)
+        map.plot(self.PATH_2[0], self.PATH_2[1], color="red")
 
         # Test directions:
         map.directions((37.770776,-122.461689), (37.780776,-122.461689), waypoints=[(37.431257,-122.133121)])
