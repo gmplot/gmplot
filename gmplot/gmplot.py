@@ -6,8 +6,6 @@ import requests
 
 from collections import namedtuple
 
-from gmplot.color import _get_hex_color
-from gmplot.google_maps_templates import _SYMBOLS
 from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
@@ -20,9 +18,10 @@ from gmplot.drawables.marker import _Marker
 from gmplot.drawables.polygon import _Polygon
 from gmplot.drawables.polyline import _Polyline
 from gmplot.drawables.route import _Route
+from gmplot.drawables.symbol import _Symbol
 from gmplot.drawables.text import _Text
 
-_Symbol = namedtuple('Symbol', ['symbol', 'lat', 'lng', 'size'])
+from gmplot.drawables.symbols.circle import _Circle
 
 _ArgInfo = namedtuple('ArgInfo', ['arguments', 'default'])
 
@@ -107,7 +106,6 @@ class GoogleMapPlotter(object):
         self.map_type = str(map_type)
         self.apikey = str(apikey)
         self.points = []
-        self.symbols = []
         self._drawables = []
         self.gridsetting = None
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
@@ -426,41 +424,18 @@ class GoogleMapPlotter(object):
             if point_settings.pop('marker'):
                 self.marker(*location, **point_settings)
             else:
-                self._add_symbol(_Symbol(point_settings.pop('symbol'), *location, size=point_settings.pop('size')), **point_settings)
+                shape = point_settings.pop('symbol')
+                if not _Symbol.is_valid(shape):
+                    raise InvalidSymbolError("Symbol '%s' is not implemented." % shape)
+                self._drawables.append(_Symbol(shape, *location, size=point_settings.pop('size'), **point_settings))
 
-    def _add_symbol(self, symbol, **kwargs):
-        '''
-        Add a symbol to the list of symbols to render.
-
-        Args:
-            symbol (_Symbol): Symbol to add.
-
-        Optional:
-
-        Args:
-            edge_alpha/ea (float): Opacity of the symbol's edge, ranging from 0 to 1. Defaults to 1.0.
-            edge_width/ew (int): Width of the symbol's edge, in pixels. Defaults to 1.
-            face_alpha/alpha (float): Opacity of the symbol's face, ranging from 0 to 1. Defaults to 0.5.
-            color/c/face_color/fc (str): Color of the symbol's face.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-            color/c/edge_color/ec (str): Color of the symbol's edge.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-        '''
-        self.symbols.append((symbol, {
-            'edge_alpha': _get_value(kwargs, ['edge_alpha', 'ea'], 1.0),
-            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
-            'face_alpha': _get_value(kwargs, ['face_alpha', 'alpha'], 0.5),
-            'face_color': _get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'),
-            'color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000')
-        }))
-
-    def circle(self, lat, lng, radius, color=None, c=None, alpha=0.5, **kwargs):
+    def circle(self, lat, lng, radius, **kwargs):
         '''
         Plot a circle.
 
         Args:
-            lats (float): Latitude of the center of the circle.
-            lngs (float): Longitude of the center of the circle.
+            lat (float): Latitude of the center of the circle.
+            lng (float): Longitude of the center of the circle.
             radius (int): Radius of the circle, in meters.
 
         Optional:
@@ -489,7 +464,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.circle.png
         '''
-        self._add_symbol(_Symbol('o', lat, lng, radius), color=color, c=c, alpha=alpha, **kwargs)
+        self._drawables.append(_Circle(lat, lng, radius, **kwargs))
 
     def plot(self, lats, lngs, **kwargs):
         '''
@@ -791,7 +766,6 @@ class GoogleMapPlotter(object):
         self.write_map(w)
         self.write_grids(w)
         self.write_points(w, color_cache)
-        self.write_symbols(w)
         [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
         w.dedent()
@@ -853,10 +827,6 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6], point[7]) # TODO: Not maintainable.
 
-    def write_symbols(self, w):
-        for symbol, settings in self.symbols:
-            self.write_symbol(w, symbol, settings)
-
     def write_map(self, w):
         w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
         w.indent()
@@ -897,24 +867,6 @@ class GoogleMapPlotter(object):
 
         # TODO: When Point-writing is pulled into its own class, move _MarkerIcon, _Marker, and _MarkerInfoWindow initialization into _Point's constructor.
 
-    def write_symbol(self, w, symbol, settings):
-        try:
-            template = _SYMBOLS[symbol.symbol]
-        except KeyError:
-            raise InvalidSymbolError("Symbol %s is not implemented" % symbol.symbol)
-
-        w.write(template.format(
-            lat=symbol.lat,
-            lng=symbol.lng,
-            size=symbol.size,
-            strokeColor=_get_hex_color(settings.get('color')),
-            strokeOpacity=settings.get('edge_alpha'),
-            strokeWeight=settings.get('edge_width'),
-            fillColor=_get_hex_color(settings.get('face_color')),
-            fillOpacity=settings.get('face_alpha')
-        ))
-        w.write()
-
 if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
@@ -927,7 +879,7 @@ if __name__ == "__main__": # pragma: no coverage
     mymap.marker(37.429, -122.144, "k")
     lat, lng = mymap.geocode("Stanford University", apikey)
     mymap.marker(lat, lng, "red", info_window="<a href='https://www.stanford.edu/'>Stanford University</a>")
-    mymap.circle(37.429, -122.145, 100, "#FF0000", ew=2)
+    mymap.circle(37.429, -122.145, 100, color="#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]
     path2 = [[i+.01 for i in path[0]], [i+.02 for i in path[1]]]

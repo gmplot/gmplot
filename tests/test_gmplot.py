@@ -48,7 +48,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
         map.marker(37.430, -122.142, "red", label='A')
 
         # Test circle:
-        map.circle(37.429, -122.145, 100, "#FF0000", ew=2)
+        map.circle(37.429, -122.145, 100, color="#FF0000", ew=2)
 
         # Test plot:
         map.plot(self.PATH_1[0], self.PATH_1[1], color="plum", edge_width=10)
@@ -100,10 +100,11 @@ class GoogleMapPlotterTest(unittest.TestCase):
 
     def test_invalid_symbol(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
-        map.scatter(self.PATH_4[0], self.PATH_4[1], s=90, marker=False, alpha=0.9, symbol='z', c='red', edge_width=4)
 
         with self.assertRaises(InvalidSymbolError):
-            map.get()
+            map.scatter(self.PATH_4[0], self.PATH_4[1], s=90, marker=False, alpha=0.9, symbol='z', c='red', edge_width=4)
+
+        map.get()
 
     def test_grid(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
