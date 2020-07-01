@@ -17,6 +17,7 @@ from gmplot.drawables.marker_dropper import _MarkerDropper
 from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
 from gmplot.drawables.marker import _Marker
+from gmplot.drawables.polygon import _Polygon
 from gmplot.drawables.route import _Route
 from gmplot.drawables.text import _Text
 
@@ -105,7 +106,6 @@ class GoogleMapPlotter(object):
         self.map_type = str(map_type)
         self.apikey = str(apikey)
         self.paths = []
-        self.shapes = []
         self.points = []
         self.symbols = []
         self._drawables = []
@@ -630,7 +630,7 @@ class GoogleMapPlotter(object):
         '''
         self._drawables.append(_GroundOverlay(url, bounds, **kwargs))
 
-    def polygon(self, lats, lngs, color=None, c=None, **kwargs):
+    def polygon(self, lats, lngs, **kwargs):
         '''
         Plot a polygon.
 
@@ -676,20 +676,8 @@ class GoogleMapPlotter(object):
         '''
         if len(lats) != len(lngs):
             raise ValueError("Number of latitudes and longitudes don't match!")
-
-        # Copy the formal arguments to kwargs:
-        kwargs.setdefault("color", color)
-        kwargs.setdefault("c", c)
-        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
         
-        self.shapes.append((zip(lats, lngs), {
-            'edge_color': _get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'),
-            'edge_alpha': _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0),
-            'edge_width': _get_value(kwargs, ['edge_width', 'ew'], 1),
-            'face_alpha': _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.3),
-            'face_color': _get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'),
-            'precision': _get_value(kwargs, ['precision'], 6)
-        }))
+        self._drawables.append(_Polygon(lats, lngs, **kwargs))
 
     def enable_marker_dropping(self, color, **kwargs):
         '''
@@ -815,7 +803,6 @@ class GoogleMapPlotter(object):
         self.write_points(w, color_cache)
         self.write_paths(w)
         self.write_symbols(w)
-        self.write_shapes(w)
         [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
         w.dedent()
@@ -884,10 +871,6 @@ class GoogleMapPlotter(object):
     def write_paths(self, w):
         for path, settings in self.paths:
             self.write_polyline(w, path, settings)
-
-    def write_shapes(self, w):
-        for shape, settings in self.shapes:
-            self.write_polygon(w, shape, settings)
 
     def write_map(self, w):
         w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
@@ -958,27 +941,6 @@ class GoogleMapPlotter(object):
         w.write('strokeWeight: %d,' % settings.get('edge_width'))
         w.write('map: map,')
         w.write('path: [')
-        w.indent()
-        for coordinate in path:
-            w.write('%s,' % _format_LatLng(coordinate[0], coordinate[1], settings.get("precision")))
-        w.dedent()
-        w.write(']')
-        w.dedent()
-        w.write('});')
-        w.write()
-
-    def write_polygon(self, w, path, settings):
-        w.write('new google.maps.Polygon({')
-        w.indent()
-        w.write('clickable: %s,' % str(False).lower())
-        w.write('geodesic: %s,' % str(True).lower())
-        w.write('fillColor: "%s",' % _get_hex_color(settings.get('face_color')))
-        w.write('fillOpacity: %f,' % settings.get('face_alpha'))
-        w.write('strokeColor: "%s",' % _get_hex_color(settings.get('edge_color')))
-        w.write('strokeOpacity: %f,' % settings.get('edge_alpha'))
-        w.write('strokeWeight: %d,' % settings.get('edge_width'))
-        w.write('map: map,')
-        w.write('paths: [')
         w.indent()
         for coordinate in path:
             w.write('%s,' % _format_LatLng(coordinate[0], coordinate[1], settings.get("precision")))
