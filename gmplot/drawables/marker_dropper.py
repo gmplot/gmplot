@@ -48,9 +48,9 @@ class _MarkerDropper(object):
         w.indent()
         self._marker.write(w)
         w.write('''
-        {marker_name}.addListener('click', function() {{
-            {marker_name}.setMap(null);
-        }});
+            {marker_name}.addListener('click', function() {{
+                {marker_name}.setMap(null);
+            }});
         '''.format(marker_name=self._MARKER_NAME))
         w.dedent()
         w.write('});')

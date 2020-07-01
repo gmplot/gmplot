@@ -17,13 +17,13 @@ class _MarkerInfoWindow(object):
             info_marker_index (int): Index of this info window.
         '''
         w.write('''
-        var {info_window_name} = new google.maps.InfoWindow({{
-            content: '{content}'
-        }});
+            var {info_window_name} = new google.maps.InfoWindow({{
+                content: '{content}'
+            }});
 
-        {marker_name}.addListener('click', function() {{
-            {info_window_name}.open(map, {marker_name});
-        }});
+            {marker_name}.addListener('click', function() {{
+                {info_window_name}.open(map, {marker_name});
+            }});
         '''.format(
             info_window_name='info_window_%d' % info_marker_index,
             marker_name=self._marker_name,

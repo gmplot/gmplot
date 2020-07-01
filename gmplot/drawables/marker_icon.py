@@ -37,11 +37,15 @@ class _MarkerIcon(object):
         '''
         # If this marker icon hasn't been written before, then embed it in the script:
         if self._color not in color_cache:
-            w.write('var %s = {' % self._name)
-            w.indent()
-            w.write('url: "%s",' % self._icon) 
-            w.write('labelOrigin: new google.maps.Point(10, 11)') # TODO: Avoid hardcoded label origin.
-            w.dedent()
-            w.write('};')
+            w.write('''
+                var {name} = {{
+                    url: "{icon}",
+                    labelOrigin: new google.maps.Point(10, 11)
+                }};
+            '''.format(
+                name=self._name,
+                icon=self._icon
+            )) # TODO: Avoid hardcoded labelOrigin
             w.write()
+            
             color_cache.add(self._color)
