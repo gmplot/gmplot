@@ -12,6 +12,7 @@ from gmplot.google_maps_templates import _SYMBOLS
 from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
+from gmplot.drawables.ground_overlay import _GroundOverlay
 from gmplot.drawables.marker_dropper import _MarkerDropper
 from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
@@ -110,7 +111,7 @@ class GoogleMapPlotter(object):
         self.points = []
         self.symbols = []
         self.heatmap_points = []
-        self.ground_overlays = []
+        self._ground_overlays = []
         self.gridsetting = None
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._routes = []
@@ -620,7 +621,7 @@ class GoogleMapPlotter(object):
             'dissipating': dissipating
         }, precision))
 
-    def ground_overlay(self, url, bounds, opacity=1.0):
+    def ground_overlay(self, url, bounds, **kwargs):
         '''
         Overlay an image from a given URL onto the map.
 
@@ -647,7 +648,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.ground_overlay.png
         '''
-        self.ground_overlays.append((url, bounds, opacity))
+        self._ground_overlays.append(_GroundOverlay(url, bounds, **kwargs))
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         '''
@@ -836,7 +837,7 @@ class GoogleMapPlotter(object):
         self.write_symbols(w)
         self.write_shapes(w)
         self.write_heatmap(w)
-        self.write_ground_overlay(w)
+        [ground_overlay.write(w) for ground_overlay in self._ground_overlays] # TODO: Avoid this duplication with different elements.
         [route.write(w) for route in self._routes]
         [text.write(w) for text in self._text_labels]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
@@ -1039,21 +1040,6 @@ class GoogleMapPlotter(object):
             w.write(']')
             w.dedent()
             w.write('});')
-            w.write()
-
-    def write_ground_overlay(self, w):
-        for url, bounds, opacity in self.ground_overlays:
-            w.write('''
-                new google.maps.GroundOverlay(
-                    "{url}",
-                    {bounds},
-                    {{
-                        opacity: {opacity},
-                        map: map,
-                        clickable: false
-                    }}
-                );
-            '''.format(url=url, bounds=json.dumps(bounds), opacity=opacity))
             w.write()
 
 if __name__ == "__main__": # pragma: no coverage
