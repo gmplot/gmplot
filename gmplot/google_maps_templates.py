@@ -1,3 +1,5 @@
+# TODO: Prefix everything below with an underscore (counts as an API change).
+
 EARTH_RADIUS = 6378.8  # in KM
 
 CIRCLE_MARKER = """
@@ -11,7 +13,9 @@ new google.maps.Circle({{
     center: new google.maps.LatLng({lat}, {long}),
     radius: {size}
 }});
-"""
+""" # TODO: Set clickable=false and geodesic=true? (maybe counts as an API change?).
+
+# TODO: Use `write_polyline()` or equivalent function below, instead of drawing polylines from scratch.
 
 # FIXME: This generates an X marker in Cartesian frame rather than in lat/long.
 X_MARKER = """
