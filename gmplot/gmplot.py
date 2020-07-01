@@ -9,7 +9,7 @@ import warnings
 from collections import namedtuple
 
 from gmplot.color import _get_hex_color
-from gmplot.google_maps_templates import SYMBOLS, CIRCLE_MARKER # TODO: Remove CIRCLE_MARKER (counts as an API change).
+from gmplot.google_maps_templates import _SYMBOLS
 from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
@@ -966,7 +966,7 @@ class GoogleMapPlotter(object):
 
     def write_symbol(self, w, symbol, settings):
         try:
-            template = SYMBOLS[symbol.symbol]
+            template = _SYMBOLS[symbol.symbol]
         except KeyError:
             raise InvalidSymbolError("Symbol %s is not implemented" % symbol.symbol)
 

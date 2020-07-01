@@ -1,8 +1,6 @@
-# TODO: Prefix everything below with an underscore (counts as an API change).
+_EARTH_RADIUS = 6378.8  # in KM
 
-EARTH_RADIUS = 6378.8  # in KM
-
-CIRCLE_MARKER = """
+_CIRCLE_MARKER = """
 new google.maps.Circle({{
     strokeColor: '{strokeColor}',
     strokeOpacity: {strokeOpacity},
@@ -18,7 +16,7 @@ new google.maps.Circle({{
 # TODO: Use `write_polyline()` or equivalent function below, instead of drawing polylines from scratch.
 
 # FIXME: This generates an X marker in Cartesian frame rather than in lat/lng.
-X_MARKER = """
+_X_MARKER = """
 var lat = {lat};
 var lng = {lng};
 var delta = {size}/1000.0/%s/Math.sqrt(2);
@@ -48,10 +46,10 @@ new google.maps.Polyline({{
     strokeWeight: {strokeWeight},
     map: map
 }});
-""" % EARTH_RADIUS
+""" % _EARTH_RADIUS
 
 # FIXME: This generates a plus marker in Cartesian frame rather than in lat/lng.
-PLUS_MARKER = """
+_PLUS_MARKER = """
 var lat = {lat};
 var lng = {lng};
 var delta = {size}/1000.0/%s;
@@ -81,10 +79,10 @@ new google.maps.Polyline({{
     strokeWeight: {strokeWeight},
     map: map
 }});
-""" % EARTH_RADIUS
+""" % _EARTH_RADIUS
 
-SYMBOLS = {
-    'o': CIRCLE_MARKER,
-    'x': X_MARKER,
-    '+': PLUS_MARKER,
+_SYMBOLS = {
+    'o': _CIRCLE_MARKER,
+    'x': _X_MARKER,
+    '+': _PLUS_MARKER,
 }
