@@ -108,12 +108,9 @@ class GoogleMapPlotter(object):
         self.shapes = []
         self.points = []
         self.symbols = []
-        self._heatmaps = []
-        self._ground_overlays = []
+        self._drawables = []
         self.gridsetting = None
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
-        self._routes = []
-        self._text_labels = []
         self._map_styles = _get_value(kwargs, ['map_styles'], [])
         self._tilt = _get_value(kwargs, ['tilt'])
         self._scale_control = _get_value(kwargs, ['scale_control'], False)
@@ -224,7 +221,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.text.png
         '''
-        self._text_labels.append(_Text(lat, lng, text, **kwargs))
+        self._drawables.append(_Text(lat, lng, text, **kwargs))
 
     def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment): # TODO: Replace start/end params with bounds parameter used elsewhere (counts as an API change).
         '''
@@ -325,7 +322,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.directions.png
         '''
-        self._routes.append(_Route(origin, destination, **kwargs))
+        self._drawables.append(_Route(origin, destination, **kwargs))
 
     def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
         '''
@@ -602,7 +599,7 @@ class GoogleMapPlotter(object):
         if weights is not None and len(weights) != len(lats):
             raise ValueError("`weights`' length doesn't match the number of points!")
 
-        self._heatmaps.append(_Heatmap(lats, lngs, **kwargs))
+        self._drawables.append(_Heatmap(lats, lngs, **kwargs))
 
     def ground_overlay(self, url, bounds, **kwargs):
         '''
@@ -631,7 +628,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.ground_overlay.png
         '''
-        self._ground_overlays.append(_GroundOverlay(url, bounds, **kwargs))
+        self._drawables.append(_GroundOverlay(url, bounds, **kwargs))
 
     def polygon(self, lats, lngs, color=None, c=None, **kwargs):
         '''
@@ -819,10 +816,7 @@ class GoogleMapPlotter(object):
         self.write_paths(w)
         self.write_symbols(w)
         self.write_shapes(w)
-        [heatmap.write(w) for heatmap in self._heatmaps]
-        [ground_overlay.write(w) for ground_overlay in self._ground_overlays] # TODO: Avoid this duplication with different elements.
-        [route.write(w) for route in self._routes]
-        [text.write(w) for text in self._text_labels]
+        [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
         w.dedent()
         w.write('}')
