@@ -14,11 +14,13 @@ class _Route(object):
         Args:
             travel_mode (str): Travel mode. Defaults to 'DRIVING'.
             waypoints ([(float, float)]): Waypoints.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
-        self._origin = _format_LatLng(*origin)
-        self._destination = _format_LatLng(*destination)
+        precision = _get_value(kwargs, ['precision'], 6)
+        self._origin = _format_LatLng(*origin, precision=precision)
+        self._destination = _format_LatLng(*destination, precision=precision)
         self._travel_mode = _get_value(kwargs, ['travel_mode'], 'DRIVING').upper()
-        self._waypoints = [_format_LatLng(*waypoint) for waypoint in _get_value(kwargs, ['waypoints'], [])]
+        self._waypoints = [_format_LatLng(*waypoint, precision=precision) for waypoint in _get_value(kwargs, ['waypoints'], [])]
 
     def write(self, w):
         '''

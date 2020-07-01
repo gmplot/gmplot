@@ -54,6 +54,7 @@ class GoogleMapPlotter(object):
             scale_control (bool): Whether or not to display the `scale control`_. Defaults to False.
             fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
                 ``{'north':, 'south':, 'east':, 'west':}``.
+            precision (int): Number of digits after the decimal to round to for the lat/lng center. Defaults to 6.
             
         .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
         .. _Map type: https://developers.google.com/maps/documentation/javascript/maptypes
@@ -102,6 +103,7 @@ class GoogleMapPlotter(object):
         '''
         # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
         self.center = (float(lat), float(lng))
+        self._center_precision = _get_value(kwargs, ['precision'], 6)
         self.zoom = int(zoom)
         self.map_type = str(map_type)
         self.apikey = str(apikey)
@@ -205,6 +207,7 @@ class GoogleMapPlotter(object):
 
         Args:
             color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         Usage::
 
@@ -297,6 +300,7 @@ class GoogleMapPlotter(object):
         Args:
             travel_mode (str): `Travel mode`_. Defaults to 'DRIVING'.
             waypoints ([(float, float)]): Waypoints to pass through.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         .. _Directions API: https://console.cloud.google.com/marketplace/details/google/directions-backend.googleapis.com
         .. _Travel mode: https://developers.google.com/maps/documentation/javascript/directions#TravelModes
@@ -448,6 +452,7 @@ class GoogleMapPlotter(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             color/c/edge_color/ec (str): Color of the circle's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         Usage::
 
@@ -839,7 +844,7 @@ class GoogleMapPlotter(object):
         if self._scale_control:
             w.write('scaleControl: true,')
         w.write('zoom: %d,' % self.zoom)
-        w.write('center: %s' % _format_LatLng(self.center[0], self.center[1]))
+        w.write('center: %s' % _format_LatLng(self.center[0], self.center[1], self._center_precision))
         w.dedent()
         w.write('});')
         w.write()

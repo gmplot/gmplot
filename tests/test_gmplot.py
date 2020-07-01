@@ -6,7 +6,7 @@ from gmplot.gmplot import _format_LatLng, _Route, GoogleMapPlotter, InvalidSymbo
 
 class GMPlotTest(unittest.TestCase):
     def test_format_LatLng(self):
-        self.assertEqual(_format_LatLng(45.123456, -80.987654), 'new google.maps.LatLng(45.123456, -80.987654)')
+        self.assertEqual(_format_LatLng(45.123456, -80.987654, 6), 'new google.maps.LatLng(45.123456, -80.987654)')
         self.assertEqual(_format_LatLng(45.123456, -80.987654, 4), 'new google.maps.LatLng(45.1235, -80.9877)')
         self.assertEqual(_format_LatLng(45.1, -80.9, 3), 'new google.maps.LatLng(45.100, -80.900)')
 

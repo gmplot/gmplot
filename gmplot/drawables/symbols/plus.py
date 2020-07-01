@@ -21,10 +21,12 @@ class _Plus(object):
             edge_width/ew (int): Width of the '+''s edge, in pixels. Defaults to 1.
             color/c/edge_color/ec (str): Color of the '+''s edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-        ''' # TODO: Pass in precision as well.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+        '''
         kwargs.setdefault('edge_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000')))
         kwargs.setdefault('edge_alpha', _get_value(kwargs, ['edge_alpha', 'ea'], 1.0))
         kwargs.setdefault('edge_width', _get_value(kwargs, ['edge_width', 'ew'], 1))
+        kwargs.setdefault('precision', _get_value(kwargs, ['precision'], 6))
 
         # TODO: The following generates a '+' in Cartesian frame rather than in lat/lng; avoid this.
         delta_lat = (size / 1000.0 / _EARTH_RADIUS_IN_KM) * (180.0 / math.pi)

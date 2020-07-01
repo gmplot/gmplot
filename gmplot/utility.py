@@ -57,18 +57,14 @@ def _get_value(dict, keys, default=None, get_key=False):
             return value if not get_key else (key, value)
     return default if not get_key else (None, default)
 
-def _format_LatLng(lat, lng, precision=6):
+def _format_LatLng(lat, lng, precision):
     '''
     Format the given latitude/longitude location as a Google Maps LatLng object.
 
     Args:
         lat (float): Latitude.
         lng (float): Longitude.
-
-    Optional:
-
-    Args:
-        precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+        precision (int): Number of digits after the decimal to round to for lat/lng values.
 
     Returns:
         str: Formatted Google Maps LatLng object.
