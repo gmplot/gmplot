@@ -20,8 +20,7 @@ from gmplot.drawables.marker import _Marker
 from gmplot.drawables.route import _Route
 from gmplot.drawables.text import _Text
 
-Symbol = namedtuple('Symbol', ['symbol', 'lat', 'long', 'size'])
-# TODO: Rename `long` to `lng` to match the rest of the project (counts as an API change).
+Symbol = namedtuple('Symbol', ['symbol', 'lat', 'lng', 'size'])
 
 _ArgInfo = namedtuple('ArgInfo', ['arguments', 'default'])
 
@@ -973,7 +972,7 @@ class GoogleMapPlotter(object):
 
         w.write(template.format(
             lat=symbol.lat,
-            long=symbol.long,
+            lng=symbol.lng,
             size=symbol.size,
             strokeColor=_get_hex_color(settings.get('color')),
             strokeOpacity=settings.get('edge_alpha'),
@@ -983,8 +982,8 @@ class GoogleMapPlotter(object):
         ))
         w.write()
 
-    def write_circle(self, w, lat, long, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
-        self.write_symbol(w, Symbol('o', lat, long, size), settings)
+    def write_circle(self, w, lat, lng, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
+        self.write_symbol(w, Symbol('o', lat, lng, size), settings)
 
     def write_polyline(self, w, path, settings):
         w.write('new google.maps.Polyline({')
