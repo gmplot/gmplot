@@ -25,7 +25,7 @@ class _Symbol(object):
         '''
         return shape in _Symbol._SHAPES
 
-    def __init__(self, shape, lat, lng, size, **kwargs): # TODO: Pass in precision as well.
+    def __init__(self, shape, lat, lng, size, **kwargs):
         '''
         Args:
             shape (str): Shape of the symbol, as 'o', 'x', or '+'.
@@ -43,12 +43,14 @@ class _Symbol(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             color/c/edge_color/ec (str): Color of the symbol's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
         kwargs.setdefault('edge_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000')))
         kwargs.setdefault('edge_alpha', _get_value(kwargs, ['edge_alpha', 'ea'], 1.0))
         kwargs.setdefault('edge_width', _get_value(kwargs, ['edge_width', 'ew'], 1))
         kwargs.setdefault('face_alpha', _get_value(kwargs, ['face_alpha', 'alpha'], 0.5))
         kwargs.setdefault('face_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000')))
+        kwargs.setdefault('precision', _get_value(kwargs, ['precision'], 6))
 
         self._symbol = self._SHAPES[shape](lat, lng, size, **kwargs)
 

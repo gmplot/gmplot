@@ -13,8 +13,10 @@ class _Text(object):
 
         Args:
             color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
-        self._position = _format_LatLng(lat, lng)
+        precision = _get_value(kwargs, ['precision'], 6)
+        self._position = _format_LatLng(lat, lng, precision)
         self._text = text
         self._color = _get_hex_color(_get_value(kwargs, ['color', 'c'], '#000000'))
         self._icon = _get_embeddable_image(_COLOR_ICON_PATH % 'clear')
