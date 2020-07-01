@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import json
 import math
-import os
 import requests
 import warnings
 
@@ -29,12 +28,6 @@ class InvalidSymbolError(Exception):
 
 class GoogleAPIError(Exception):
     pass
-
-def safe_iter(var): # TODO: Remove since unused (counts as API change).
-    try:
-        return iter(var)
-    except TypeError:
-        return [var]
 
 class GoogleMapPlotter(object):
     '''
@@ -119,7 +112,6 @@ class GoogleMapPlotter(object):
         self.heatmap_points = []
         self.ground_overlays = []
         self.gridsetting = None
-        self.coloricon = os.path.join(os.path.dirname(__file__), 'markers/%s.png') # TODO: Unused; remove (counts as an API change).
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._routes = []
         self._text_labels = []
@@ -907,11 +899,6 @@ class GoogleMapPlotter(object):
         for point in self.points:
             self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6], point[7]) # TODO: Not maintainable.
 
-    def write_circles(self, w): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
-        for symbol, settings in self.symbols:
-            if symbol.symbol == 'o':
-                self.write_symbol(w, symbol, settings)
-
     def write_symbols(self, w):
         for symbol, settings in self.symbols:
             self.write_symbol(w, symbol, settings)
@@ -981,9 +968,6 @@ class GoogleMapPlotter(object):
             fillOpacity=settings.get('face_alpha')
         ))
         w.write()
-
-    def write_circle(self, w, lat, lng, size, settings): # TODO: Remove since unused (counts as an API change since it's technically a public function). # pragma: no coverage
-        self.write_symbol(w, _Symbol('o', lat, lng, size), settings)
 
     def write_polyline(self, w, path, settings):
         w.write('new google.maps.Polyline({')
