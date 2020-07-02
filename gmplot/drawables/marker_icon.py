@@ -27,16 +27,16 @@ class _MarkerIcon(object):
         '''Get the name of the marker icon.'''
         return self._name
     
-    def write(self, w, color_cache):
+    def write(self, w, context):
         '''
         Write the marker icon (if it isn't already written).
 
         Args:
             w (_Writer): Writer used to write the marker icon.
-            color_cache (set): Cache of colors written so far.
+            context (_Context): Context used to keep track of what was drawn to the map.
         '''
         # If this marker icon hasn't been written before, then embed it in the script:
-        if self._color not in color_cache:
+        if self._color not in context.color_cache:
             w.write('''
                 var {name} = {{
                     url: "{icon}",
@@ -48,4 +48,4 @@ class _MarkerIcon(object):
             )) # TODO: Avoid hardcoded labelOrigin
             w.write()
             
-            color_cache.add(self._color)
+            context.color_cache.add(self._color)
