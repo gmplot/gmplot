@@ -30,7 +30,7 @@ class _Circle(object):
         self._face_alpha = _get_value(kwargs, ['face_alpha', 'alpha'], 0.5)
         self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'))
 
-    def write(self, w): # TODO: Set clickable=false and geodesic=true
+    def write(self, w):
         '''
         Write the circle.
 
@@ -39,6 +39,8 @@ class _Circle(object):
         '''
         w.write('''
             new google.maps.Circle({{
+                clickable: false,
+                geodesic: true,
                 strokeColor: '{edge_color}',
                 strokeOpacity: {edge_alpha},
                 strokeWeight: {edge_width},
