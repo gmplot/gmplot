@@ -23,7 +23,7 @@ class _Plus(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
-        kwargs.setdefault('edge_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000')))
+        kwargs.setdefault('edge_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black')))
         kwargs.setdefault('edge_alpha', _get_value(kwargs, ['edge_alpha', 'ea'], 1.0))
         kwargs.setdefault('edge_width', _get_value(kwargs, ['edge_width', 'ew'], 1))
         kwargs.setdefault('precision', _get_value(kwargs, ['precision'], 6))

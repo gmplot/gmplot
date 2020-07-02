@@ -385,7 +385,7 @@ class GoogleMapPlotter(object):
         .. image:: GoogleMapPlotter.scatter.png
         '''
         ARG_MAP = {
-            'color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], '#000000'),
+            'color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], 'black'),
             'size': _ArgInfo(['size', 's'], 40),
             'marker': _ArgInfo(['marker'], True),
             'symbol': _ArgInfo(['symbol'], 'o'),
