@@ -329,7 +329,7 @@ class GoogleMapPlotter(object):
         '''
         self._drawables.append(_Route(origin, destination, **kwargs))
 
-    def scatter(self, lats, lngs, color=None, size=None, marker=True, c=None, s=None, symbol='o', **kwargs):
+    def scatter(self, lats, lngs, **kwargs):
         '''
         Plot a collection of points.
 
@@ -387,8 +387,8 @@ class GoogleMapPlotter(object):
         ARG_MAP = {
             'color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], '#000000'),
             'size': _ArgInfo(['size', 's'], 40),
-            'marker': _ArgInfo(['marker'], None),
-            'symbol': _ArgInfo(['symbol'], None),
+            'marker': _ArgInfo(['marker'], True),
+            'symbol': _ArgInfo(['symbol'], 'o'),
             'title': _ArgInfo(['title'], None),
             'label': _ArgInfo(['label'], None),
             'precision': _ArgInfo(['precision'], 6),
@@ -402,15 +402,6 @@ class GoogleMapPlotter(object):
 
         if len(lats) != len(lngs):
             raise ValueError("Number of latitudes and longitudes don't match!")
-
-        # Copy the formal arguments to kwargs:
-        kwargs.setdefault('color', color)
-        kwargs.setdefault('c', c)
-        kwargs.setdefault('size', size)
-        kwargs.setdefault('s', s)
-        kwargs.setdefault('marker', marker)
-        kwargs.setdefault('symbol', symbol)
-        # TODO: This is temporary until the function argument list is refactored to work with kwargs only.
 
         # For each setting...
         settings = dict()
