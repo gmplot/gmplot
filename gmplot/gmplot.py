@@ -56,7 +56,7 @@ class GoogleMapPlotter(object):
             fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
                 ``{'north': float, 'south': float, 'east': float, 'west': float}``.
             precision (int): Number of digits after the decimal to round to for the lat/lng center. Defaults to 6.
-            
+
         .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
         .. _Map type: https://developers.google.com/maps/documentation/javascript/maptypes
         .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
@@ -113,7 +113,7 @@ class GoogleMapPlotter(object):
         self._marker_dropper = None
 
     @classmethod
-    def from_geocode(cls, location, zoom=13, apikey=''):
+    def from_geocode(cls, location, **kwargs):
         '''
         Initialize a GoogleMapPlotter object using a location string (instead of a specific lat/lng location).
 
@@ -126,14 +126,27 @@ class GoogleMapPlotter(object):
 
         Args:
             zoom (int): `Zoom level`_, where 0 is fully zoomed out. Defaults to 13.
+            map_type (str): `Map type`_.
             apikey (str): Google Maps `API key`_.
+            title (str): Title of the HTML file (as it appears in the browser tab).
+            map_styles ([dict]): `Map styles`_. Requires `Maps JavaScript API`_.
+            tilt (int): `Tilt`_ of the map upon zooming in.
+            scale_control (bool): Whether or not to display the `scale control`_. Defaults to False.
+            fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
+                ``{'north': float, 'south': float, 'east': float, 'west': float}``.
+            precision (int): Number of digits after the decimal to round to for the lat/lng center. Defaults to 6.
 
         Returns:
             :class:`GoogleMapPlotter`
 
         .. _Geocoding API: https://console.cloud.google.com/marketplace/details/google/geocoding-backend.googleapis.com
         .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
+        .. _Map type: https://developers.google.com/maps/documentation/javascript/maptypes
         .. _API key: https://developers.google.com/maps/documentation/javascript/get-api-key
+        .. _Map styles: https://developers.google.com/maps/documentation/javascript/style-reference
+        .. _Maps JavaScript API: https://console.cloud.google.com/marketplace/details/google/maps-backend.googleapis.com
+        .. _Tilt: https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.tilt
+        .. _scale control: https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions.scaleControl
 
         Usage::
 
@@ -144,7 +157,9 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.from_geocode.png
         '''
-        return cls(*GoogleMapPlotter.geocode(location, apikey=apikey), zoom=zoom, apikey=apikey)
+        zoom = _get_value(kwargs, ['zoom'], 13, pop=True)
+        apikey = _get_value(kwargs, ['apikey'], '')
+        return cls(*GoogleMapPlotter.geocode(location, apikey=apikey), zoom=zoom, **kwargs)
 
     @staticmethod
     def geocode(location, apikey=''):
