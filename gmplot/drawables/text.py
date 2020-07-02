@@ -18,7 +18,7 @@ class _Text(object):
         precision = _get_value(kwargs, ['precision'], 6)
         self._position = _format_LatLng(lat, lng, precision)
         self._text = text
-        self._color = _get_hex_color(_get_value(kwargs, ['color', 'c'], '#000000'))
+        self._color = _get_hex_color(_get_value(kwargs, ['color', 'c'], 'black'))
         self._icon = _get_embeddable_image(_COLOR_ICON_PATH % 'clear')
 
     def write(self, w):

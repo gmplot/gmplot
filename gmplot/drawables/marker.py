@@ -25,7 +25,7 @@ class _Marker(object):
         .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
         .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
         '''
-        color = _get_hex_color(_get_value(kwargs, ['color', 'c'], '#FF0000', pop=True))
+        color = _get_hex_color(_get_value(kwargs, ['color', 'c'], 'red', pop=True))
         self._marker_icon = _MarkerIcon(color)
 
         self._info_window = _get_value(kwargs, ['info_window'], pop=True)

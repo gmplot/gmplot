@@ -13,7 +13,7 @@ class _Grid(object):
         '''
         SETTINGS = { # TODO: Allow those to be modified.
             'edge_width': 1.0,
-            'color': "#000000",
+            'color': 'black',
             'precision': 6
         }
 

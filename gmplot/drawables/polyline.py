@@ -17,7 +17,7 @@ class _Polyline(object):
             edge_width/ew (int): Width of the polyline, in pixels. Defaults to 1.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
-        self._color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'))
+        self._color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))
         self._edge_alpha = _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0)
         self._edge_width = _get_value(kwargs, ['edge_width', 'ew'], 1)
 

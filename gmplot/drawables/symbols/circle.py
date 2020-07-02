@@ -24,11 +24,11 @@ class _Circle(object):
         precision = _get_value(kwargs, ['precision'], 6)
         self._center = _format_LatLng(lat, lng, precision)
         self._radius = radius
-        self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'))
+        self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))
         self._edge_alpha = _get_value(kwargs, ['edge_alpha', 'ea'], 1.0)
         self._edge_width = _get_value(kwargs, ['edge_width', 'ew'], 1)
         self._face_alpha = _get_value(kwargs, ['face_alpha', 'alpha'], 0.5)
-        self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'))
+        self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'black'))
 
     def write(self, w):
         '''

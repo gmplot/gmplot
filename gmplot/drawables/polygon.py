@@ -20,11 +20,11 @@ class _Polygon(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
-        self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], '#000000'))
+        self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))
         self._edge_alpha = _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0)
         self._edge_width = _get_value(kwargs, ['edge_width', 'ew'], 1)
         self._face_alpha = _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.3)
-        self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], '#000000'))
+        self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'black'))
 
         precision = _get_value(kwargs, ['precision'], 6)
 
