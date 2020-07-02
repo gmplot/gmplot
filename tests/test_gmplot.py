@@ -2,7 +2,8 @@ import unittest
 import warnings
 from gmplot.utility import StringIO, _format_LatLng
 from gmplot.writer import _Writer
-from gmplot.gmplot import _Route, GoogleMapPlotter, InvalidSymbolError
+from gmplot.drawables.route import _Route
+from gmplot.google_map_plotter import GoogleMapPlotter, InvalidSymbolError
 
 class GMPlotTest(unittest.TestCase):
     def test_format_LatLng(self):
