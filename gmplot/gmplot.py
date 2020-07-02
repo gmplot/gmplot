@@ -5,12 +5,13 @@ import requests
 
 from collections import namedtuple
 
-from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
+from gmplot.utility import StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
 from gmplot.drawables.grid import _Grid
 from gmplot.drawables.ground_overlay import _GroundOverlay
 from gmplot.drawables.heatmap import _Heatmap
+from gmplot.drawables.map import _Map
 from gmplot.drawables.marker_dropper import _MarkerDropper
 from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
@@ -36,7 +37,7 @@ class GoogleMapPlotter(object):
     Plotter that draws on a Google Map.
     '''
 
-    def __init__(self, lat, lng, zoom, map_type='', apikey='', **kwargs):
+    def __init__(self, lat, lng, zoom, **kwargs):
         '''
         Args:
             lat (float): Latitude of the center of the map.
@@ -101,19 +102,13 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter_Styled.png
         '''
-        # TODO: Prepend a single underscore to any attributes meant to be non-public (counts as an API change).
-        self.center = (float(lat), float(lng))
-        self._center_precision = _get_value(kwargs, ['precision'], 6)
-        self.zoom = int(zoom)
-        self.map_type = str(map_type)
-        self.apikey = str(apikey)
-        self.points = []
+        self._apikey = _get_value(kwargs, ['apikey'], '', pop=True)
+        self._title = _get_value(kwargs, ['title'], 'Google Maps - gmplot', pop=True)
+
+        self._map = _Map(lat, lng, zoom, **kwargs)
+
+        self._points = []
         self._drawables = []
-        self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
-        self._map_styles = _get_value(kwargs, ['map_styles'], [])
-        self._tilt = _get_value(kwargs, ['tilt'])
-        self._scale_control = _get_value(kwargs, ['scale_control'], False)
-        self._fit_bounds = _get_value(kwargs, ['fit_bounds'])
         self._num_info_markers = 0
         self._marker_dropper = None
 
@@ -279,7 +274,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.marker.png
         '''
-        self.points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window'), kwargs.get('draggable')))
+        self._points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window'), kwargs.get('draggable')))
 
     def directions(self, origin, destination, **kwargs):
         '''
@@ -761,11 +756,11 @@ class GoogleMapPlotter(object):
             <title>{title}</title>
             <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization{key}"></script>
             <script type="text/javascript">
-        '''.format(title=self.title, key=('&key=%s' % self.apikey if self.apikey else '')))
+        '''.format(title=self._title, key=('&key=%s' % self._apikey if self._apikey else '')))
         w.indent()
         w.write('function initialize() {')
         w.indent()
-        self.write_map(w)
+        self._map.write(w)
         self.write_points(w, color_cache)
         [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
@@ -787,28 +782,8 @@ class GoogleMapPlotter(object):
         # TODO: Having a mutable set as a default parameter is done on purpose for backward compatibility.
         #       Should get rid of this in next major version (counts as an API change of course).
         self._num_info_markers = 0 # TODO: Instead of resetting the count here, point writing should be refactored into its own class (counts as an API change).
-        for point in self.points:
+        for point in self._points:
             self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6], point[7]) # TODO: Not maintainable.
-
-    def write_map(self, w):
-        w.write('var map = new google.maps.Map(document.getElementById("map_canvas"), {')
-        w.indent()
-        if self._map_styles:
-            w.write('styles: %s,' % json.dumps(self._map_styles, indent=_INDENT_LEVEL))
-        if self.map_type:
-            w.write('mapTypeId: "%s",' % self.map_type.lower())
-        if self._tilt is not None:
-            w.write('tilt: %d,' % self._tilt)
-        if self._scale_control:
-            w.write('scaleControl: true,')
-        w.write('zoom: %d,' % self.zoom)
-        w.write('center: %s' % _format_LatLng(self.center[0], self.center[1], self._center_precision))
-        w.dedent()
-        w.write('});')
-        w.write()
-        if self._fit_bounds:
-            w.write('map.fitBounds(%s);' % json.dumps(self._fit_bounds))
-            w.write()
 
     def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None, draggable=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
         # Write the marker icon (if it isn't written already).
@@ -833,8 +808,8 @@ class GoogleMapPlotter(object):
 if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
-    mymap = GoogleMapPlotter(37.428, -122.145, 16, apikey)
-    # mymap = GoogleMapPlotter.from_geocode("Stanford University", apikey)
+    mymap = GoogleMapPlotter(37.428, -122.145, 16, apikey=apikey)
+    # mymap = GoogleMapPlotter.from_geocode("Stanford University", apikey=apikey)
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
     mymap.marker(37.427, -122.145, "yellow")

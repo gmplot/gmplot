@@ -33,7 +33,7 @@ if sys.version_info.major == 2:
 else:
     from io import StringIO # pragma: no coverage
 
-def _get_value(dict, keys, default=None, get_key=False):
+def _get_value(dict, keys, default=None, get_key=False, pop=False):
     '''
     Get the value of any of the provided keys.
 
@@ -46,6 +46,7 @@ def _get_value(dict, keys, default=None, get_key=False):
     Args:
         default: Value to return if none of the keys have a value. Defaults to None.
         get_key (bool): Whether or not to also return the key associated with the returned value. Defaults to False.
+        pop (bool): Whether or not to pop the element if it's found. Defaults to False.
 
     Returns:
         any or (str, any): Value of the first valid key, or a tuple of the key and its value if ``get_key`` is True.
@@ -54,6 +55,7 @@ def _get_value(dict, keys, default=None, get_key=False):
     for key in keys:
         value = dict.get(key)
         if value is not None:
+            if pop: del dict[key]
             return value if not get_key else (key, value)
     return default if not get_key else (None, default)
 
