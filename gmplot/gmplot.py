@@ -5,7 +5,8 @@ import requests
 
 from collections import namedtuple
 
-from gmplot.utility import StringIO, _get_value, _format_LatLng
+from gmplot.context import _Context
+from gmplot.utility import StringIO, _get_value
 from gmplot.writer import _Writer
 
 from gmplot.drawables.grid import _Grid
@@ -13,16 +14,13 @@ from gmplot.drawables.ground_overlay import _GroundOverlay
 from gmplot.drawables.heatmap import _Heatmap
 from gmplot.drawables.map import _Map
 from gmplot.drawables.marker_dropper import _MarkerDropper
-from gmplot.drawables.marker_icon import _MarkerIcon
-from gmplot.drawables.marker_info_window import _MarkerInfoWindow
 from gmplot.drawables.marker import _Marker
 from gmplot.drawables.polygon import _Polygon
 from gmplot.drawables.polyline import _Polyline
 from gmplot.drawables.route import _Route
 from gmplot.drawables.symbol import _Symbol
-from gmplot.drawables.text import _Text
-
 from gmplot.drawables.symbols.circle import _Circle
+from gmplot.drawables.text import _Text
 
 _ArgInfo = namedtuple('ArgInfo', ['arguments', 'default'])
 
@@ -106,10 +104,8 @@ class GoogleMapPlotter(object):
         self._title = _get_value(kwargs, ['title'], 'Google Maps - gmplot', pop=True)
 
         self._map = _Map(lat, lng, zoom, **kwargs)
-
-        self._points = []
         self._drawables = []
-        self._num_info_markers = 0
+        self._markers = []
         self._marker_dropper = None
 
     @classmethod
@@ -255,7 +251,7 @@ class GoogleMapPlotter(object):
         '''
         self._drawables.append(_Grid(bounds, lat_increment, lng_increment))
 
-    def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None, **kwargs):
+    def marker(self, lat, lng, **kwargs):
         '''
         Display a marker.
 
@@ -271,7 +267,7 @@ class GoogleMapPlotter(object):
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
             label (str): Label displayed on the marker.
             info_window (str): HTML content to be displayed in a pop-up `info window`_.
-            draggable (bool): Whether or not the marker is `draggable`_.
+            draggable (bool): Whether or not the marker is `draggable`_. Defaults to False.
 
         .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
         .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
@@ -290,7 +286,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.marker.png
         '''
-        self._points.append((lat, lng, c or color, title, precision, label, kwargs.get('info_window'), kwargs.get('draggable')))
+        self._markers.append(_Marker(lat, lng, **kwargs))
 
     def directions(self, origin, destination, **kwargs):
         '''
@@ -673,7 +669,7 @@ class GoogleMapPlotter(object):
         Args:
             title (str): Hover-over title of the markers to be dropped.
             label (str): Label displayed on the markers to be dropped.
-            draggable (bool): Whether or not the markers to be dropped are `draggable`_.
+            draggable (bool): Whether or not the markers to be dropped are `draggable`_. Defaults to False.
 
         .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
 
@@ -751,10 +747,6 @@ class GoogleMapPlotter(object):
                 self._write_html(w)
             return f.getvalue()
 
-    #############################################
-    # # # # # # Low level Map Drawing # # # # # #
-    #############################################
-
     def _write_html(self, w):
         '''
         Write the HTML map.
@@ -762,7 +754,7 @@ class GoogleMapPlotter(object):
         Args:
             w (_Writer): Writer used to write the HTML map.
         '''
-        color_cache = set()
+        context = _Context()
 
         w.write('''
             <html>
@@ -777,9 +769,9 @@ class GoogleMapPlotter(object):
         w.write('function initialize() {')
         w.indent()
         self._map.write(w)
-        self.write_points(w, color_cache)
         [drawable.write(w) for drawable in self._drawables]
-        if self._marker_dropper: self._marker_dropper.write(w, color_cache)
+        [marker.write(w, context) for marker in self._markers]
+        if self._marker_dropper: self._marker_dropper.write(w, context)
         w.dedent()
         w.write('}')
         w.dedent()
@@ -792,35 +784,6 @@ class GoogleMapPlotter(object):
             </html>
         ''')
 
-    # TODO: Prepend a single underscore to the following functions to make them non-public (counts as an API change).
-
-    def write_points(self, w, color_cache=set()):
-        # TODO: Having a mutable set as a default parameter is done on purpose for backward compatibility.
-        #       Should get rid of this in next major version (counts as an API change of course).
-        self._num_info_markers = 0 # TODO: Instead of resetting the count here, point writing should be refactored into its own class (counts as an API change).
-        for point in self._points:
-            self.write_point(w, point[0], point[1], point[2], point[3], point[4], color_cache, point[5], point[6], point[7]) # TODO: Not maintainable.
-
-    def write_point(self, w, lat, lng, color, title, precision, color_cache, label, info_window=None, draggable=None): # TODO: Bundle args into some Point or Marker class (counts as an API change).
-        # Write the marker icon (if it isn't written already).
-        marker_icon = _MarkerIcon(color)
-        marker_icon.write(w, color_cache)
-
-        # If this marker should have an info window, give it a unique name:
-        marker_name = ('info_marker_%d' % self._num_info_markers) if info_window is not None else None
-
-        # Write the actual marker:
-        marker = _Marker(_format_LatLng(lat, lng, precision), name=marker_name, title=title, label=label, icon=marker_icon.name, draggable=draggable)
-        marker.write(w)
-
-        # Write the marker's info window, if specified:
-        if info_window is not None:
-            marker_info_window = _MarkerInfoWindow(marker_name, info_window)
-            marker_info_window.write(w, self._num_info_markers)
-            self._num_info_markers += 1
-
-        # TODO: When Point-writing is pulled into its own class, move _MarkerIcon, _Marker, and _MarkerInfoWindow initialization into _Point's constructor.
-
 if __name__ == "__main__": # pragma: no coverage
     apikey=''
 
@@ -828,11 +791,11 @@ if __name__ == "__main__": # pragma: no coverage
     # mymap = GoogleMapPlotter.from_geocode("Stanford University", apikey=apikey)
 
     mymap.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
-    mymap.marker(37.427, -122.145, "yellow")
-    mymap.marker(37.428, -122.146, "cornflowerblue")
-    mymap.marker(37.429, -122.144, "k")
+    mymap.marker(37.427, -122.145, color="yellow")
+    mymap.marker(37.428, -122.146, color="cornflowerblue")
+    mymap.marker(37.429, -122.144, color="k")
     lat, lng = GoogleMapPlotter.geocode("Stanford University", apikey)
-    mymap.marker(lat, lng, "red", info_window="<a href='https://www.stanford.edu/'>Stanford University</a>")
+    mymap.marker(lat, lng, color="red", info_window="<a href='https://www.stanford.edu/'>Stanford University</a>")
     mymap.circle(37.429, -122.145, 100, color="#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
              (-122.145, -122.145, -122.145, -122.146, -122.146)]

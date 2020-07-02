@@ -1,8 +1,8 @@
 import unittest
 import warnings
-from gmplot.utility import StringIO
+from gmplot.utility import StringIO, _format_LatLng
 from gmplot.writer import _Writer
-from gmplot.gmplot import _format_LatLng, _Route, GoogleMapPlotter, InvalidSymbolError
+from gmplot.gmplot import _Route, GoogleMapPlotter, InvalidSymbolError
 
 class GMPlotTest(unittest.TestCase):
     def test_format_LatLng(self):
@@ -42,10 +42,10 @@ class GoogleMapPlotterTest(unittest.TestCase):
         map = GoogleMapPlotter(37.428, -122.145, 16, fit_bounds=bounds)
 
         # Test marker:
-        map.marker(37.427, -122.145, "yellow")
-        map.marker(37.428, -122.146, "cornflowerblue")
-        map.marker(37.429, -122.144, "k", title='Here')
-        map.marker(37.430, -122.142, "red", label='A')
+        map.marker(37.427, -122.145, color="yellow")
+        map.marker(37.428, -122.146, color="cornflowerblue")
+        map.marker(37.429, -122.144, color="k", title='Here')
+        map.marker(37.430, -122.142, color="red", label='A')
 
         # Test circle:
         map.circle(37.429, -122.145, 100, color="#FF0000", ew=2)
@@ -128,12 +128,13 @@ class GoogleMapPlotterTest(unittest.TestCase):
 
     def test_unsupported_marker_color(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
-        map.marker(37.428, -122.146, "#123456") # (valid but unsupported color)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             
-            map.get()
+            map.marker(37.428, -122.146, color="#123456") # (valid but unsupported color)
             
             self.assertEqual(len(w), 1, "'get()' should raise a single warning")
             self.assertTrue(issubclass(w[-1].category, UserWarning), "'get()' should raise a 'UserWarning'")
+
+        map.get()
