@@ -162,7 +162,7 @@ class GoogleMapPlotter(object):
         return cls(*GoogleMapPlotter.geocode(location, apikey=apikey), zoom=zoom, **kwargs)
 
     @staticmethod
-    def geocode(location, apikey=''):
+    def geocode(location, **kwargs):
         '''
         Return the lat/lng coordinates of a location string.
 
@@ -193,6 +193,7 @@ class GoogleMapPlotter(object):
 
             -> (48.801408, 2.130122)
         '''
+        apikey = _get_value(kwargs, ['apikey'], '')
         geocode = requests.get('https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location, apikey))
         geocode = json.loads(geocode.text)
         if geocode.get('error_message', ''):
