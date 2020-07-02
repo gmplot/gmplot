@@ -108,7 +108,8 @@ class GoogleMapPlotterTest(unittest.TestCase):
 
     def test_grid(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
-        map.grid(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
+        bounds = {'north': 37.43, 'south': 37.42, 'east': -122.14, 'west': -122.15}
+        map.grid(bounds, 0.001, 0.001)
         map.get()
 
     def test_map_styles(self):

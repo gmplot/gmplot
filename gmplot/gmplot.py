@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import json
-import math
 import requests
 
 from collections import namedtuple
@@ -9,6 +8,7 @@ from collections import namedtuple
 from gmplot.utility import _INDENT_LEVEL, StringIO, _get_value, _format_LatLng
 from gmplot.writer import _Writer
 
+from gmplot.drawables.grid import _Grid
 from gmplot.drawables.ground_overlay import _GroundOverlay
 from gmplot.drawables.heatmap import _Heatmap
 from gmplot.drawables.marker_dropper import _MarkerDropper
@@ -53,7 +53,7 @@ class GoogleMapPlotter(object):
             tilt (int): `Tilt`_ of the map upon zooming in.
             scale_control (bool): Whether or not to display the `scale control`_. Defaults to False.
             fit_bounds (dict): Fit the map to contain the given bounds, as a dict of the form
-                ``{'north':, 'south':, 'east':, 'west':}``.
+                ``{'north': float, 'south': float, 'east': float, 'west': float}``.
             precision (int): Number of digits after the decimal to round to for the lat/lng center. Defaults to 6.
             
         .. _Zoom level: https://developers.google.com/maps/documentation/javascript/tutorial#zoom-levels
@@ -109,7 +109,6 @@ class GoogleMapPlotter(object):
         self.apikey = str(apikey)
         self.points = []
         self._drawables = []
-        self.gridsetting = None
         self.title = _get_value(kwargs, ['title'], 'Google Maps - gmplot')
         self._map_styles = _get_value(kwargs, ['map_styles'], [])
         self._tilt = _get_value(kwargs, ['tilt'])
@@ -222,16 +221,14 @@ class GoogleMapPlotter(object):
         '''
         self._drawables.append(_Text(lat, lng, text, **kwargs))
 
-    def grid(self, lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment): # TODO: Replace start/end params with bounds parameter used elsewhere (counts as an API change).
+    def grid(self, bounds, lat_increment, lng_increment):
         '''
         Plot a grid.
 
         Args:
-            lat_start (float): Starting latitude of the grid.
-            lat_end (float): Ending latitude of the grid.
+            bounds (dict): Grid bounds, as a dict of the form
+                ``{'north': float, 'south': float, 'east': float, 'west': float}``.
             lat_increment (float): Distance between latitudinal divisions.
-            lng_start (float): Starting longitude of the grid.
-            lng_end (float): Ending longitude of the grid.
             lng_increment (float): Distance between longitudinal divisions.
 
         Usage::
@@ -239,12 +236,13 @@ class GoogleMapPlotter(object):
             import gmplot
             apikey = '' # (your API key here)
             gmap = gmplot.GoogleMapPlotter(37.425, -122.145, 16, apikey=apikey)
-            gmap.grid(37.42, 37.43, 0.002, -122.15, -122.14, 0.0025)
+            bounds = {'north': 37.43, 'south': 37.42, 'east': -122.14, 'west': -122.15}        
+            gmap.grid(bounds, 0.002, 0.0025)
             gmap.draw('map.html')
 
         .. image:: GoogleMapPlotter.grid.png
         '''
-        self.gridsetting = [lat_start, lat_end, lat_increment, lng_start, lng_end, lng_increment]
+        self._drawables.append(_Grid(bounds, lat_increment, lng_increment))
 
     def marker(self, lat, lng, color='#FF0000', c=None, title=None, precision=6, label=None, **kwargs):
         '''
@@ -575,7 +573,8 @@ class GoogleMapPlotter(object):
 
         Args:
             url (str): URL of image to overlay.
-            bounds (dict): Image bounds, as a dict of the form ``{'north':, 'south':, 'east':, 'west':}``.
+            bounds (dict): Image bounds, as a dict of the form
+                ``{'north': float, 'south': float, 'east': float, 'west': float}``.
 
         Optional:
 
@@ -767,7 +766,6 @@ class GoogleMapPlotter(object):
         w.write('function initialize() {')
         w.indent()
         self.write_map(w)
-        self.write_grids(w)
         self.write_points(w, color_cache)
         [drawable.write(w) for drawable in self._drawables]
         if self._marker_dropper: self._marker_dropper.write(w, color_cache)
@@ -784,44 +782,6 @@ class GoogleMapPlotter(object):
         ''')
 
     # TODO: Prepend a single underscore to the following functions to make them non-public (counts as an API change).
-
-    def write_grids(self, w):
-        if self.gridsetting is None:
-            return
-
-        lat_start = self.gridsetting[0] # TODO: Use a better structure than a list (counts as an API change).
-        lat_end = self.gridsetting[1]
-        lat_increment = self.gridsetting[2]
-        lng_start = self.gridsetting[3]
-        lng_end = self.gridsetting[4]
-        lng_increment = self.gridsetting[5]
-
-        settings = {
-            'edge_width': 1.0,
-            'color': "#000000",
-            'precision': 6
-        }
-
-        # Draw the grid's bounding box:
-        _Polyline(*zip(*[
-            (lat_start, lng_start),
-            (lat_end, lng_start),
-            (lat_end, lng_end),
-            (lat_start, lng_end),
-            (lat_start, lng_start)
-        ]), **settings).write(w)
-
-        get_num_divisions = lambda start, end, increment: int(math.ceil((end - start) / increment))
-
-        # Draw the grid's latitudinal divisions:
-        for lat_index in range(1, get_num_divisions(lat_start, lat_end, lat_increment)):
-            lat = lat_start + float(lat_index) * lat_increment
-            _Polyline(*zip(*[(lat, lng_start), (lat, lng_end)]), **settings).write(w)
-
-        # Draw the grid's longitudinal divisions: 
-        for lng_index in range(1, get_num_divisions(lng_start, lng_end, lng_increment)):
-            lng = lng_start + float(lng_index) * lng_increment
-            _Polyline(*zip(*[(lat_start, lng), (lat_end, lng)]), **settings).write(w)
 
     def write_points(self, w, color_cache=set()):
         # TODO: Having a mutable set as a default parameter is done on purpose for backward compatibility.

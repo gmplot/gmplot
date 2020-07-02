@@ -7,7 +7,8 @@ class _GroundOverlay(object):
         '''
         Args:
             url (str): URL of image to overlay.
-            bounds (dict): Image bounds, as a dict of the form ``{'north':, 'south':, 'east':, 'west':}``.
+            bounds (dict): Image bounds, as a dict of the form
+                ``{'north': float, 'south': float, 'east': float, 'west': float}``.
 
         Optional:
 
