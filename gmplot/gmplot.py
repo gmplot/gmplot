@@ -150,11 +150,10 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.from_geocode.png
         '''
-        lat, lng = cls.geocode(location, apikey=apikey)
-        return cls(lat, lng, zoom, apikey=apikey)
+        return cls(*GoogleMapPlotter.geocode(location, apikey=apikey), zoom=zoom, apikey=apikey)
 
-    @classmethod
-    def geocode(self, location, apikey=''): # TODO: Change to a staticmethod (counts as an API change).
+    @staticmethod
+    def geocode(location, apikey=''):
         '''
         Return the lat/lng coordinates of a location string.
 
@@ -185,8 +184,7 @@ class GoogleMapPlotter(object):
 
             -> (48.801408, 2.130122)
         '''
-        geocode = requests.get(
-            'https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location, apikey))
+        geocode = requests.get('https://maps.googleapis.com/maps/api/geocode/json?address="%s"&key=%s' % (location, apikey))
         geocode = json.loads(geocode.text)
         if geocode.get('error_message', ''):
             raise GoogleAPIError(geocode['error_message'])
@@ -882,7 +880,7 @@ if __name__ == "__main__": # pragma: no coverage
     mymap.marker(37.427, -122.145, "yellow")
     mymap.marker(37.428, -122.146, "cornflowerblue")
     mymap.marker(37.429, -122.144, "k")
-    lat, lng = mymap.geocode("Stanford University", apikey)
+    lat, lng = GoogleMapPlotter.geocode("Stanford University", apikey)
     mymap.marker(lat, lng, "red", info_window="<a href='https://www.stanford.edu/'>Stanford University</a>")
     mymap.circle(37.429, -122.145, 100, color="#FF0000", ew=2)
     path = [(37.429, 37.428, 37.427, 37.427, 37.427),
