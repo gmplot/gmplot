@@ -15,17 +15,17 @@ class _Marker(object):
         Optional:
 
         Args:
-            color/c (str): Marker color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to red.
+            color/c/face_color/fc (str): Marker color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to red.
             title (str): Hover-over title of the marker.
-            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
             label (str): Label displayed on the marker.
             info_window (str): HTML content to be displayed in a pop-up `info window`_.
             draggable (bool): Whether or not the marker is `draggable`_. Defaults to False.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
         .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
         '''
-        color = _get_hex_color(_get_value(kwargs, ['color', 'c'], 'red', pop=True))
+        color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'red', pop=True))
         self._marker_icon = _MarkerIcon(color)
 
         self._info_window = _get_value(kwargs, ['info_window'], pop=True)

@@ -12,23 +12,23 @@ class _Circle(object):
         Optional:
 
         Args:
-            edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
-            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
-            face_alpha/alpha (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
-            color/c/face_color/fc (str): Color of the circle's face.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             color/c/edge_color/ec (str): Color of the circle's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
+            color/c/face_color/fc (str): Color of the circle's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
         precision = _get_value(kwargs, ['precision'], 6)
         self._center = _format_LatLng(lat, lng, precision)
         self._radius = radius
         self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))
-        self._edge_alpha = _get_value(kwargs, ['edge_alpha', 'ea'], 1.0)
+        self._edge_alpha = _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0)
         self._edge_width = _get_value(kwargs, ['edge_width', 'ew'], 1)
-        self._face_alpha = _get_value(kwargs, ['face_alpha', 'alpha'], 0.5)
         self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'black'))
+        self._face_alpha = _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.5)
 
     def write(self, w):
         '''

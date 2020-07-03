@@ -15,9 +15,9 @@ class _Polygon(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             alpha/edge_alpha/ea (float): Opacity of the polygon's edge, ranging from 0 to 1. Defaults to 1.0.
             edge_width/ew (int): Width of the polygon's edge, in pixels. Defaults to 1.
-            alpha/face_alpha/fa (float): Opacity of the polygon's face, ranging from 0 to 1. Defaults to 0.3.
             color/c/face_color/fc (str): Color of the polygon's face.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float): Opacity of the polygon's face, ranging from 0 to 1. Defaults to 0.3.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
         self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))

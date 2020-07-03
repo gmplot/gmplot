@@ -11,18 +11,18 @@ class _MarkerDropper(object):
     _MARKER_NAME = 'dropped_marker'
     _EVENT_OBJECT_NAME = 'event'
 
-    def __init__(self, color, **kwargs):
+    def __init__(self, **kwargs):
         '''
-        Args:
-            color (str): Color of the markers to be dropped.
-
         Optional:
 
         Args:
+            color/c (str): Color of the markers to be dropped. Can be hex ('#00FFFF'), named ('cyan'),
+                or matplotlib-like ('c'). Defaults to red.
             title (str): Hover-over title of the markers to be dropped.
             label (str): Label displayed on the markers to be dropped.
             draggable (bool): Whether or not the markers to be dropped are draggable. Defaults to False.
         '''
+        color = _get_hex_color(_get_value(kwargs, ['color', 'c'], 'red', pop=True))
         self._marker_icon = _MarkerIcon(color)
         self._marker = _RawMarker('%s.latLng' % self._EVENT_OBJECT_NAME, self._marker_icon.get_name(), **kwargs)
 

@@ -228,7 +228,7 @@ class GoogleMapPlotter(object):
         '''
         self._drawables.append(_Text(lat, lng, text, **kwargs))
 
-    def grid(self, bounds, lat_increment, lng_increment):
+    def grid(self, bounds, lat_increment, lng_increment, **kwargs):
         '''
         Plot a grid.
 
@@ -237,6 +237,15 @@ class GoogleMapPlotter(object):
                 ``{'north': float, 'south': float, 'east': float, 'west': float}``.
             lat_increment (float): Distance between latitudinal divisions.
             lng_increment (float): Distance between longitudinal divisions.
+
+        Optional:
+
+        Args:
+            color/c/edge_color/ec (str): Color of the grid.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the grid, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the grid lines, in pixels. Defaults to 1.
+            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         Usage::
 
@@ -249,7 +258,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.grid.png
         '''
-        self._drawables.append(_Grid(bounds, lat_increment, lng_increment))
+        self._drawables.append(_Grid(bounds, lat_increment, lng_increment, **kwargs))
 
     def marker(self, lat, lng, **kwargs):
         '''
@@ -340,19 +349,26 @@ class GoogleMapPlotter(object):
         Optional:
 
         Args:
-            color/c/edge_color/ec (str or [str]):
-                Color of each point. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-            size/s (int or [int]): Size of each point, in meters (symbols only). Defaults to 40.
             marker (bool or [bool]): True to plot points as markers, False to plot them as symbols. Defaults to True.
-            symbol (str or [str]): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
             title (str or [str]): Hover-over title of each point (markers only).
             label (str or [str]): Label displayed on each point (markers only).
-            precision (int or [int]): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
-            alpha/face_alpha/fa (float or [float]):
-                Opacity of each point's face, ranging from 0 to 1 (symbols only). Defaults to 0.3.
+            info_window (str or [str]): HTML content to be displayed in each point's pop-up `info window`_ (markers only).
+            draggable (bool): Whether or not each point is `draggable`_ (markers only). Defaults to False.
+            symbol (str or [str]): Shape of each point, as 'o', 'x', or '+' (symbols only). Defaults to 'o'.
+            size/s (int or [int]): Size of each point, in meters (symbols only). Defaults to 40.
+            color/c/edge_color/ec (str or [str]):
+                Color of each point's edge (symbols only). Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             alpha/edge_alpha/ea (float or [float]):
                 Opacity of each point's edge, ranging from 0 to 1 (symbols only). Defaults to 1.0.
             edge_width/ew (int or [int]): Width of each point's edge, in pixels (symbols only). Defaults to 1.
+            color/c/face_color/fc (str or [str]):
+                Color of each point's face. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float or [float]):
+                Opacity of each point's face, ranging from 0 to 1 (symbols only). Defaults to 0.3.
+            precision (int or [int]): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+
+        .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
+        .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
 
         Usage::
 
@@ -385,16 +401,19 @@ class GoogleMapPlotter(object):
         .. image:: GoogleMapPlotter.scatter.png
         '''
         ARG_MAP = {
-            'color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], 'black'),
-            'size': _ArgInfo(['size', 's'], 40),
             'marker': _ArgInfo(['marker'], True),
-            'symbol': _ArgInfo(['symbol'], 'o'),
             'title': _ArgInfo(['title'], None),
             'label': _ArgInfo(['label'], None),
-            'precision': _ArgInfo(['precision'], 6),
-            'face_alpha': _ArgInfo(['alpha', 'face_alpha', 'fa'], 0.3),
+            'info_window': _ArgInfo(['info_window'], None),
+            'draggable': _ArgInfo(['draggable'], False),
+            'symbol': _ArgInfo(['symbol'], 'o'),
+            'size': _ArgInfo(['size', 's'], 40),
+            'edge_color': _ArgInfo(['color', 'c', 'edge_color', 'ec'], 'black'),
             'edge_alpha': _ArgInfo(['alpha', 'edge_alpha', 'ea'], 1.0),
-            'edge_width': _ArgInfo(['edge_width', 'ew'], 1)
+            'edge_width': _ArgInfo(['edge_width', 'ew'], 1),
+            'face_color': _ArgInfo(['color', 'c', 'face_color', 'fc'], 'black'),
+            'face_alpha': _ArgInfo(['alpha', 'face_alpha', 'fa'], 0.3),
+            'precision': _ArgInfo(['precision'], 6)
         }
         # This links the draw-related settings to the arguments passed into this function.
         # Note that some settings can be set through more than one argument.
@@ -439,13 +458,13 @@ class GoogleMapPlotter(object):
         Optional:
 
         Args:
-            edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
-            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
-            face_alpha/alpha (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
-            color/c/face_color/fc (str): Color of the circle's face.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             color/c/edge_color/ec (str): Color of the circle's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
+            color/c/face_color/fc (str): Color of the circle's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         Usage::
@@ -610,9 +629,9 @@ class GoogleMapPlotter(object):
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             alpha/edge_alpha/ea (float): Opacity of the polygon's edge, ranging from 0 to 1. Defaults to 1.0.
             edge_width/ew (int): Width of the polygon's edge, in pixels. Defaults to 1.
-            alpha/face_alpha/fa (float): Opacity of the polygon's face, ranging from 0 to 1. Defaults to 0.3.
             color/c/face_color/fc (str): Color of the polygon's face.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float): Opacity of the polygon's face, ranging from 0 to 1. Defaults to 0.3.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
 
         Usage::
@@ -644,7 +663,7 @@ class GoogleMapPlotter(object):
         
         self._drawables.append(_Polygon(lats, lngs, **kwargs))
 
-    def enable_marker_dropping(self, color, **kwargs):
+    def enable_marker_dropping(self, **kwargs):
         '''
         Allows markers to be dropped onto the map when clicked.
 
@@ -652,12 +671,11 @@ class GoogleMapPlotter(object):
         
         Note: Calling this function multiple times will just overwrite the existing dropped marker settings.
 
-        Args:
-            color (str): Color of the markers to be dropped.
-
         Optional:
 
         Args:
+            color/c (str): Color of the markers to be dropped. Can be hex ('#00FFFF'), named ('cyan'),
+                or matplotlib-like ('c'). Defaults to red.
             title (str): Hover-over title of the markers to be dropped.
             label (str): Label displayed on the markers to be dropped.
             draggable (bool): Whether or not the markers to be dropped are `draggable`_. Defaults to False.
@@ -669,12 +687,12 @@ class GoogleMapPlotter(object):
             import gmplot
             apikey = '' # (your API key here)
             gmap = gmplot.GoogleMapPlotter(37.766956, -122.438481, 13, apikey=apikey)
-            gmap.enable_marker_dropping('orange', draggable=True)
+            gmap.enable_marker_dropping(color='orange', draggable=True)
             gmap.draw('map.html')
 
         .. image:: GoogleMapPlotter.enable_marker_dropping.gif
         '''
-        self._marker_dropper = _MarkerDropper(color, **kwargs)
+        self._marker_dropper = _MarkerDropper(**kwargs)
 
     def draw(self, file):
         '''
