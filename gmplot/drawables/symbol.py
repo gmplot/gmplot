@@ -36,20 +36,20 @@ class _Symbol(object):
         Optional:
 
         Args:
-            edge_alpha/ea (float): Opacity of the symbol's edge, ranging from 0 to 1. Defaults to 1.0.
-            edge_width/ew (int): Width of the symbol's edge, in pixels. Defaults to 1.
-            face_alpha/alpha (float): Opacity of the symbol's face, ranging from 0 to 1. Defaults to 0.5.
-            color/c/face_color/fc (str): Color of the symbol's face.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             color/c/edge_color/ec (str): Color of the symbol's edge.
                 Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/edge_alpha/ea (float): Opacity of the symbol's edge, ranging from 0 to 1. Defaults to 1.0.
+            edge_width/ew (int): Width of the symbol's edge, in pixels. Defaults to 1.
+            color/c/face_color/fc (str): Color of the symbol's face.
+                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
+            alpha/face_alpha/fa (float): Opacity of the symbol's face, ranging from 0 to 1. Defaults to 0.5.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
         '''
         kwargs.setdefault('edge_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black')))
-        kwargs.setdefault('edge_alpha', _get_value(kwargs, ['edge_alpha', 'ea'], 1.0))
+        kwargs.setdefault('edge_alpha', _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0))
         kwargs.setdefault('edge_width', _get_value(kwargs, ['edge_width', 'ew'], 1))
-        kwargs.setdefault('face_alpha', _get_value(kwargs, ['face_alpha', 'alpha'], 0.5))
         kwargs.setdefault('face_color', _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'black')))
+        kwargs.setdefault('face_alpha', _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.5))
         kwargs.setdefault('precision', _get_value(kwargs, ['precision'], 6))
 
         self._symbol = self._SHAPES[shape](lat, lng, size, **kwargs)
