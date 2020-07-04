@@ -3,7 +3,7 @@ import warnings
 from gmplot.utility import StringIO, _format_LatLng
 from gmplot.writer import _Writer
 from gmplot.drawables.route import _Route
-from gmplot.google_map_plotter import GoogleMapPlotter, InvalidSymbolError
+from gmplot.google_map_plotter import GoogleMapPlotter
 
 class GMPlotTest(unittest.TestCase):
     def test_format_LatLng(self):
@@ -15,14 +15,14 @@ class GMPlotTest(unittest.TestCase):
 #       it doesn't test if the resulting output can actually be rendered properly in a browser.
 class RouteTest(unittest.TestCase):
     def test_write(self):
-        route = _Route((37.770776,-122.461689), (37.780776,-122.461689))
+        route = _Route((37.770776,-122.461689), (37.780776,-122.461689), 6)
 
         with StringIO() as f:
             with _Writer(f) as writer:
                 route.write(writer)
 
     def test_write_waypoints(self):
-        route = _Route((37.770776,-122.461689), (37.780776,-122.461689), waypoints=[(37.431257,-122.133121)])
+        route = _Route((37.770776,-122.461689), (37.780776,-122.461689), 6, waypoints=[(37.431257,-122.133121)])
 
         with StringIO() as f:
             with _Writer(f) as writer:
@@ -102,7 +102,7 @@ class GoogleMapPlotterTest(unittest.TestCase):
     def test_invalid_symbol(self):
         map = GoogleMapPlotter(37.428, -122.145, 16)
 
-        with self.assertRaises(InvalidSymbolError):
+        with self.assertRaises(KeyError):
             map.scatter(self.PATH_4[0], self.PATH_4[1], s=90, marker=False, alpha=0.9, symbol='z', c='red', edge_width=4)
 
         map.get()
