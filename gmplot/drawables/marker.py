@@ -1,39 +1,38 @@
-from gmplot.color import _get_hex_color
-from gmplot.utility import _get_value, _format_LatLng
-
+from gmplot.utility import _format_LatLng
 from gmplot.drawables.marker_icon import _MarkerIcon
 from gmplot.drawables.marker_info_window import _MarkerInfoWindow
 from gmplot.drawables.raw_marker import _RawMarker
 
 class _Marker(object):
-    def __init__(self, lat, lng, **kwargs):
+    def __init__(self, lat, lng, color, precision, **kwargs):
         '''
         Args:
             lat (float): Latitude of the marker.
             lng (float): Longitude of the marker.
+            color (str): Marker color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
+            precision (int): Number of digits after the decimal to round to for lat/lng values.
 
         Optional:
 
         Args:
-            color/c/face_color/fc (str): Marker color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to red.
             title (str): Hover-over title of the marker.
             label (str): Label displayed on the marker.
             info_window (str): HTML content to be displayed in a pop-up `info window`_.
-            draggable (bool): Whether or not the marker is `draggable`_. Defaults to False.
-            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            draggable (bool): Whether or not the marker is `draggable`_.
 
         .. _info window: https://developers.google.com/maps/documentation/javascript/infowindows
         .. _draggable: https://developers.google.com/maps/documentation/javascript/markers#draggable
         '''
-        color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'red', pop=True))
         self._marker_icon = _MarkerIcon(color)
 
-        self._info_window = _get_value(kwargs, ['info_window'], pop=True)
-        if self._info_window is not None:
-            self._marker_info_window = _MarkerInfoWindow(self._info_window)
+        info_window = kwargs.pop('info_window', None)
+        self._marker_info_window = _MarkerInfoWindow(info_window) if info_window is not None else None
 
-        precision = _get_value(kwargs, ['precision'], 6, pop=True)
-        self._raw_marker = _RawMarker(_format_LatLng(lat, lng, precision), self._marker_icon.get_name(), **kwargs)
+        self._raw_marker = _RawMarker(
+            _format_LatLng(lat, lng, precision),
+            self._marker_icon.get_name(),
+            **kwargs
+        ) 
 
     def write(self, w, context):
         '''
@@ -47,7 +46,7 @@ class _Marker(object):
         self._marker_icon.write(w, context)
 
         # If this marker has no associated info window, just write the marker as is:
-        if self._info_window is None:
+        if self._marker_info_window is None:
             self._raw_marker.write(w)
 
         # Otherwise, write the marker with its info window:

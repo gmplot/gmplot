@@ -1,5 +1,4 @@
 import re
-import warnings
 
 _MATPLOTLIB_COLOR_MAP = {
     'b': 'blue',
@@ -163,18 +162,6 @@ _HTML_COLOR_CODES = {
     'yellowgreen':          '#9ACD32'
 }
 
-def _is_valid_hex_color(color):
-    '''
-    Return whether or not a given color is a valid hex color.
-
-    Args:
-        color (str): Color to check.
-
-    Returns:
-        bool: True if the given color is a valid hex color, False otherwise.
-    '''
-    return bool(isinstance(color, str) and re.match('^#[0-9a-fA-F]{6}$', color))
-
 def _get_hex_color(color):
     '''
     Return the hex color code for a given color.
@@ -184,14 +171,16 @@ def _get_hex_color(color):
 
     Returns:
         str: Hex color code for the given color.
+
+    Raises:
+        ValueError: If the color isn't supported.
     '''
-    if not _is_valid_hex_color(color):
+    if not re.match('^#[0-9a-fA-F]{6}$', color):
         color = _MATPLOTLIB_COLOR_MAP.get(color, color)
 
-        if color in _HTML_COLOR_CODES:
-            color = _HTML_COLOR_CODES[color]
-        else:
-            warnings.warn("Color '%s' isn't supported." % color)
-            color = '#000000'
+        if color not in _HTML_COLOR_CODES:
+            raise ValueError("Color '%s' isn't supported!" % color)
+
+        color = _HTML_COLOR_CODES[color]
 
     return color.upper()

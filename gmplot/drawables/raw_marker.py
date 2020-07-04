@@ -1,5 +1,3 @@
-from gmplot.utility import _get_value
-
 class _RawMarker(object):
     def __init__(self, position, icon, **kwargs):
         '''
@@ -12,13 +10,13 @@ class _RawMarker(object):
         Args:
             title (str): Hover-over title of the marker.
             label (str): Label displayed on the marker.
-            draggable (bool): Whether or not the marker is draggable. Defaults to False.
+            draggable (bool): Whether or not the marker is draggable.
         '''
         self._position = position
         self._icon = icon
-        self._title = _get_value(kwargs, ['title'])
-        self._label = _get_value(kwargs, ['label'])
-        self._draggable = _get_value(kwargs, ['draggable'], False)
+        self._title = kwargs.get('title') 
+        self._label = kwargs.get('label')
+        self._draggable = kwargs.get('draggable')
 
     def write(self, w, name=None):
         '''
@@ -38,11 +36,9 @@ class _RawMarker(object):
         w.indent()
         w.write('position: %s,' % self._position)
         w.write('icon: %s,' % self._icon)
-
         if self._title is not None: w.write('title: "%s",' % self._title)
         if self._label is not None: w.write('label: "%s",' % self._label)
-        if self._draggable: w.write('draggable: %s,' % str(self._draggable).lower())
-
+        if self._draggable is True: w.write('draggable: true,')
         w.write('map: map')
         w.dedent()
         w.write('});')

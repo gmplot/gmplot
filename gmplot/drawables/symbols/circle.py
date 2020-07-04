@@ -1,34 +1,37 @@
 from gmplot.color import _get_hex_color
-from gmplot.utility import _get_value, _format_LatLng
+from gmplot.utility import _format_LatLng
 
 class _Circle(object):
-    def __init__(self, lat, lng, radius, **kwargs):
+    def __init__(self, lat, lng, radius, precision, **kwargs):
         '''
         Args:
             lat (float): Latitude of the center of the circle.
             lng (float): Longitude of the center of the circle.
             radius (int): Radius of the circle, in meters.
+            precision (int): Number of digits after the decimal to round to for lat/lng values.
 
         Optional:
 
         Args:
-            color/c/edge_color/ec (str): Color of the circle's edge.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-            alpha/edge_alpha/ea (float): Opacity of the circle's edge, ranging from 0 to 1. Defaults to 1.0.
-            edge_width/ew (int): Width of the circle's edge, in pixels. Defaults to 1.
-            color/c/face_color/fc (str): Color of the circle's face.
-                Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
-            alpha/face_alpha/fa (float): Opacity of the circle's face, ranging from 0 to 1. Defaults to 0.5.
-            precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            edge_color (str): Color of the circle's edge. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
+            edge_alpha (float): Opacity of the circle's edge, ranging from 0 to 1.
+            edge_width (int): Width of the circle's edge, in pixels.
+            face_color (str): Color of the circle's face. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
+            face_alpha (float): Opacity of the circle's face, ranging from 0 to 1.
         '''
-        precision = _get_value(kwargs, ['precision'], 6)
         self._center = _format_LatLng(lat, lng, precision)
         self._radius = radius
-        self._edge_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'edge_color', 'ec'], 'black'))
-        self._edge_alpha = _get_value(kwargs, ['alpha', 'edge_alpha', 'ea'], 1.0)
-        self._edge_width = _get_value(kwargs, ['edge_width', 'ew'], 1)
-        self._face_color = _get_hex_color(_get_value(kwargs, ['color', 'c', 'face_color', 'fc'], 'black'))
-        self._face_alpha = _get_value(kwargs, ['alpha', 'face_alpha', 'fa'], 0.5)
+
+        edge_color = kwargs.get('edge_color')
+        self._edge_color = _get_hex_color(edge_color) if edge_color is not None else None
+
+        self._edge_alpha = kwargs.get('edge_alpha')
+        self._edge_width = kwargs.get('edge_width')
+
+        face_color = kwargs.get('face_color')
+        self._face_color = _get_hex_color(face_color) if face_color is not None else None
+
+        self._face_alpha = kwargs.get('face_alpha')
 
     def write(self, w):
         '''
@@ -37,26 +40,18 @@ class _Circle(object):
         Args:
             w (_Writer): Writer used to write the circle.
         '''
-        w.write('''
-            new google.maps.Circle({{
-                clickable: false,
-                geodesic: true,
-                strokeColor: '{edge_color}',
-                strokeOpacity: {edge_alpha},
-                strokeWeight: {edge_width},
-                fillColor: '{face_color}',
-                fillOpacity: {face_alpha},
-                center: {center},
-                radius: {radius},
-                map: map
-            }});
-        '''.format(
-            edge_color=self._edge_color,
-            edge_alpha=self._edge_alpha,
-            edge_width=self._edge_width,
-            face_color=self._face_color,
-            face_alpha=self._face_alpha,
-            center=self._center,
-            radius=self._radius
-        ))
+        w.write('new google.maps.Circle({')
+        w.indent()
+        w.write('clickable: false,')
+        w.write('geodesic: true,')
+        if self._edge_color is not None: w.write('strokeColor: "%s",' % self._edge_color)
+        if self._edge_alpha is not None: w.write('strokeOpacity: %s,' % self._edge_alpha)
+        if self._edge_width is not None: w.write('strokeWeight: %s,' % self._edge_width)
+        if self._face_color is not None: w.write('fillColor: "%s",' % self._face_color)
+        if self._face_alpha is not None: w.write('fillOpacity: %s,' % self._face_alpha)
+        w.write('center: %s,' % self._center)
+        w.write('radius: %s,' % self._radius)
+        w.write('map: map')
+        w.dedent()
+        w.write('});')
         w.write()
