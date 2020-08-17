@@ -366,9 +366,9 @@ def _pretty_format_markdown(directory):
             
         # For each parameter line...
         _PARAMETER_REGEX = '(%s)(%s)(%s)' % (
-            ' *.*? ', # Matches whatever comes before the type, like: '''  * **origin** '''
+            ' *.*? ',  # Matches whatever comes before the type, like: '''  * **origin** '''
             r'\(.*\)', # Matches whatever makes up the type, like:     '''(*(**float**, **float**)*)'''
-            ' – .*'   # Matches whatever comes after the type, like:  ''' – Origin, in latitude/longitude.'''
+            ' – .*'    # Matches whatever comes after the type, like:  ''' – Origin, in latitude/longitude.'''
         )
 
         for index, line in enumerate(lines):
