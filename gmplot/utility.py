@@ -366,9 +366,9 @@ def _pretty_format_markdown(directory):
             
         # For each parameter line...
         _PARAMETER_REGEX = '(%s)(%s)(%s)' % (
-            ' *.*? ', # Matches whatever comes before the type, like: '''  * **origin** '''
-            '\(.*\)', # Matches whatever makes up the type, like:     '''(*(**float**, **float**)*)'''
-            ' – .*'   # Matches whatever comes after the type, like:  ''' – Origin, in latitude/longitude.'''
+            ' *.*? ',  # Matches whatever comes before the type, like: '''  * **origin** '''
+            r'\(.*\)', # Matches whatever makes up the type, like:     '''(*(**float**, **float**)*)'''
+            ' – .*'    # Matches whatever comes after the type, like:  ''' – Origin, in latitude/longitude.'''
         )
 
         for index, line in enumerate(lines):
@@ -476,7 +476,7 @@ def _pretty_format_markdown(directory):
 
         # Ensure embedded images fit to the page:
         for index, line in enumerate(lines):
-            match = re.match('!\[image]\((.*)\)', line, flags=re.DOTALL)
+            match = re.match(r'!\[image]\((.*)\)', line, flags=re.DOTALL)
             if match:
                 link = match.groups()[0]
 
