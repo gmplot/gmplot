@@ -14,7 +14,7 @@ class _RawMarker(object):
         '''
         self._position = position
         self._icon = icon
-        self._title = kwargs.get('title') 
+        self._title = kwargs.get('title').replace('\n', '\\n').replace('"', '\\"') 
         self._label = kwargs.get('label')
         self._draggable = kwargs.get('draggable')
 
