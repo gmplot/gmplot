@@ -35,7 +35,7 @@ class _Text(object):
         w.indent()
         w.write('text: "%s",' % self._text)
         if self._color is not None: w.write('color: "%s",' % self._color)
-        w.write('fontWeight: "bold"')
+        w.write('fontWeight: "bold",')
         w.write('fontSize: "{}px"'.format(self._font_size))
         w.dedent()
         w.write('},')
