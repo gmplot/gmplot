@@ -20,7 +20,7 @@ class _Text(object):
         color = kwargs.get('color')
         self._color = _get_hex_color(color) if color is not None else None
         self._icon = _get_embeddable_image(_COLOR_ICON_PATH % 'clear')
-        self._font_size = kwargs.get('font_size', default=20)
+        self._font_size = kwargs.get('font_size')
 
     def write(self, w):
         '''

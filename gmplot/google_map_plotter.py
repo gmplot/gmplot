@@ -260,7 +260,8 @@ class GoogleMapPlotter(object):
             lng,
             text,
             _get(kwargs, 'precision', 6),
-            color=_get(kwargs, ['color', 'c'], 'black')
+            color=_get(kwargs, ['color', 'c'], 'black'),
+            font_size=_get(kwargs, ['font_size'], '20')
         ))
 
     def grid(self, bounds, lat_increment, lng_increment, **kwargs):
