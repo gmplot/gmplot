@@ -14,12 +14,14 @@ class _Text(object):
 
         Args:
             color (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
+            font_size (int): Font size in pixels.
         '''
         self._position = _format_LatLng(lat, lng, precision)
         self._text = text
         color = kwargs.get('color')
         self._color = _get_hex_color(color) if color is not None else None
         self._icon = _get_embeddable_image(_COLOR_ICON_PATH % 'clear')
+        self._font_size = kwargs.get('font_size')
 
     def write(self, w):
         '''
@@ -34,7 +36,8 @@ class _Text(object):
         w.indent()
         w.write('text: "%s",' % self._text)
         if self._color is not None: w.write('color: "%s",' % self._color)
-        w.write('fontWeight: "bold"')
+        w.write('fontWeight: "bold",')
+        w.write('fontSize: "{}px"'.format(self._font_size))
         w.dedent()
         w.write('},')
         w.write('icon: "%s",' % self._icon)

@@ -241,6 +241,7 @@ class GoogleMapPlotter(object):
         Args:
             color/c (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c'). Defaults to black.
             precision (int): Number of digits after the decimal to round to for lat/lng values. Defaults to 6.
+            font_size (int): Font size in pixels. Defaults to 20.
 
         Usage::
 
@@ -260,7 +261,8 @@ class GoogleMapPlotter(object):
             lng,
             text,
             _get(kwargs, 'precision', 6),
-            color=_get(kwargs, ['color', 'c'], 'black')
+            color=_get(kwargs, ['color', 'c'], 'black'),
+            font_size=_get(kwargs, ['font_size'], '20')
         ))
 
     def grid(self, bounds, lat_increment, lng_increment, **kwargs):
