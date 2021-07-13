@@ -14,6 +14,7 @@ class _Text(object):
 
         Args:
             color (str): Text color. Can be hex ('#00FFFF'), named ('cyan'), or matplotlib-like ('c').
+            font_size (int): Font size in pixels.
         '''
         self._position = _format_LatLng(lat, lng, precision)
         self._text = text
