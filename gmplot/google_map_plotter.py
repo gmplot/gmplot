@@ -811,7 +811,7 @@ class GoogleMapPlotter(object):
             draggable=_get(kwargs, 'draggable', False)
         )
 
-    def draw(self, file):
+    def draw(self, file, encoding="utf-8"):
         '''
         Draw the HTML map to a file.
 
@@ -827,7 +827,7 @@ class GoogleMapPlotter(object):
 
         .. image:: GoogleMapPlotter.draw.png
         '''
-        with open(file, 'w') as f:
+        with open(file, 'w', encoding=encoding) as f:
             self._write_html(f)
 
     def get(self):
